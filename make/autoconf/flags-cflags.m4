@@ -592,7 +592,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
     # This raises the language level for older 4.8 gcc, while lowering it for later
     # versions. clang and xlclang support the same flag.
-    LANGSTD_CFLAGS="-std=c99"
+    if test "x$OPENJDK_TARGET_OS" != xandroid; then
+      LANGSTD_CFLAGS="-std=c99"
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # We can't turn on -std=c99 without breaking compilation of the splashscreen/png
     # utilities. But we can enable c99 as below (previously achieved by using -Xa).
