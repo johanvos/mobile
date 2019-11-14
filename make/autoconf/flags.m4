@@ -373,9 +373,9 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    C_FLAG_DEPS="-MMD -MF"
+    C_FLAG_DEPS="-target aarch64-linux-android -MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_FLAG_DEPS="-MMD -MF"
+    C_FLAG_DEPS="-target aarch64-linux-android -D__USE_BSD -MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then

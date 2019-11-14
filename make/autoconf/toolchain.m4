@@ -407,6 +407,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
   COMPILER=[$]$1
   COMPILER_NAME=$2
 
+  AC_MSG_NOTICE([JVBDG CHECKING The $COMPILER_NAME compiler (located as $COMPILER) and TOOLCHAINTYPE= $TOOLCHAIN_TYPE compiler.])
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # cc -V output typically looks like
     #     cc: Sun C 5.12 Linux_i386 2011/11/16
@@ -417,7 +418,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "^.* Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
+      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be 1the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running with -V was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
@@ -437,7 +438,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "IBM XL C" > /dev/null
     if test $? -ne 0; then
       ALT_VERSION_OUTPUT=`$COMPILER --version 2>&1`
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
+      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be 2the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running with -qversion was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
@@ -454,7 +455,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # Check that this is likely to be Microsoft CL.EXE.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
     if test $? -ne 0; then
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
+      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be 3the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running it was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
@@ -472,7 +473,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # Check that this is likely to be GCC.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
     if test $? -ne 0; then
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
+      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be 4the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running with --version was: "$COMPILER_VERSION"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
@@ -494,7 +495,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # Check that this is likely to be clang
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "clang" > /dev/null
     if test $? -ne 0; then
-      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required $TOOLCHAIN_TYPE compiler.])
+      AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be 5the required $TOOLCHAIN_TYPE compiler.])
       AC_MSG_NOTICE([The result from running with --version was: "$COMPILER_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
@@ -995,11 +996,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
     PATH="$OLDPATH"
 
-    TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
-    TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
-    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
-    TOOLCHAIN_EXTRACT_LD_VERSION(BUILD_LD, [build linker])
-    TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
+    #TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
+    #TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
+    #TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
+    #TOOLCHAIN_EXTRACT_LD_VERSION(BUILD_LD, [build linker])
+    #TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
