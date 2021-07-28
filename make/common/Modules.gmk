@@ -71,6 +71,17 @@ ifeq ($(call isTargetOs, windows macosx linux), false)
   MODULES_FILTER += jdk.jpackage
 endif
 
+ifeq ($(call isTargetOs, ios), true)
+￼  MODULES_FILTER += jdk.sctp
+endif
+
+################################################################################
+# Filter out specific modules for mobile platforms
+
+ifeq ($(call isTargetOs, ios), true)
+  MODULES_FILTER += jdk.sctp
+endif
+
 ################################################################################
 # Module list macros
 
