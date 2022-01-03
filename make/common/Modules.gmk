@@ -71,6 +71,17 @@ ifeq ($(call isTargetOs, windows macosx linux), false)
   MODULES_FILTER += jdk.jpackage
 endif
 
+ifeq ($(call isTargetOs, ios), true)
+￼  MODULES_FILTER += jdk.sctp
+endif
+
+################################################################################
+# Filter out specific modules for mobile platforms
+
+ifeq ($(call isTargetOs, ios), true)
+  MODULES_FILTER += jdk.sctp
+endif
+
 ################################################################################
 # Module list macros
 
@@ -79,6 +90,14 @@ endif
 GENERATED_SRC_DIRS += \
     $(SUPPORT_OUTPUTDIR)/gensrc \
     #
+ifeq ($(OPENJDK_TARGET_OS), ios)
+  SRC_SUBDIRS += macosx/classes
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), android)
+  SRC_SUBDIRS += linux/classes
+endif
+
 
 TOP_SRC_DIRS += \
     $(TOPDIR)/src \

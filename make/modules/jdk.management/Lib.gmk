@@ -41,17 +41,19 @@ ifeq ($(call isTargetOs, linux), true)
   endif
 endif
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
-    NAME := management_ext, \
-    OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
-    DISABLED_WARNINGS_clang := format-nonliteral, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_aix := -lperfstat,\
-    LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
-))
+ifeq ($(call isTargetOs, ios), false)
+    $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
+        NAME := management_ext, \
+        OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
+        CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
+        DISABLED_WARNINGS_clang := format-nonliteral, \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            $(call SET_SHARED_LIBRARY_ORIGIN), \
+        LIBS := $(JDKLIB_LIBS), \
+        LIBS_aix := -lperfstat,\
+        LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    ))
+endif
 
 $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
 
