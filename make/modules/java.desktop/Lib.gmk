@@ -40,7 +40,7 @@ include lib/Awt2dLibraries.gmk
 ################################################################################
 # Create the libjsound library
 
-ifeq ($(call isTargetOs, aix), false)
+ifeq ($(call isTargetOs, aix android ios), false)
 
   LIBJSOUND_CFLAGS := \
       $(ALSA_CFLAGS) \
