@@ -80,6 +80,10 @@ GENERATED_SRC_DIRS += \
     $(SUPPORT_OUTPUTDIR)/gensrc \
     #
 
+ifeq ($(OPENJDK_TARGET_OS), android)
+  SRC_SUBDIRS += linux/classes
+endif
+
 TOP_SRC_DIRS += \
     $(TOPDIR)/src \
     #
