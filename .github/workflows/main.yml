@@ -135,8 +135,8 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-      # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
-      if: needs.select.outputs.android-linux-x64 == 'true'
+    # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
+    if: needs.select.outputs.android-linux-x64 == 'true'
 
   build-linux-x64:
     name: linux-x64
