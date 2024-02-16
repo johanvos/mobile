@@ -117,7 +117,7 @@ jobs:
       - name: 'Configure'
         run: >
           bash configure
-          --with-conf-name=${{ inputs.platform }}
+          --with-conf-name=android-linux-x64
           --enable-headless-only
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-toolchain-path=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
