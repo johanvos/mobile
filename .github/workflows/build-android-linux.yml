@@ -120,7 +120,6 @@ jobs:
           --with-conf-name=${{ inputs.platform }}
           --enable-headless-only
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
-          --with-build-jdk=$JAVA_HOME_17_X64
           --with-toolchain-path=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
           --with-sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot
           --with-toolchain-type=clang
