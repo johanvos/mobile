@@ -40,7 +40,7 @@ runs:
   using: composite
   steps:
     - name: 'Build Android'
-      id: build
+      id: build-android
       run: >
         cd build/android-aarch64-minimal-release
         make LOG=cmdlines static-libs-image
