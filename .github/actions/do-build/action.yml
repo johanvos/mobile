@@ -42,6 +42,7 @@ runs:
     - name: 'Build Android'
       id: build-android
       run: |
+        ls build
         cd build/android-aarch64-minimal-release
         make LOG=cmdlines static-libs-image
       shell: bash
