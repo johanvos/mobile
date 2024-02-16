@@ -40,10 +40,9 @@ runs:
   using: composite
   steps:
     - name: 'Build Android'
-      id: build-android
+      id: build-android-linux
       run: |
-        ls build
-        cd build/android-aarch64-minimal-release
+        cd build/linux-x64
         make LOG=cmdlines static-libs-image
       shell: bash
       if: ${{ inputs.platform }} == 'android-linux-x64'
