@@ -42,7 +42,7 @@ runs:
     - name: 'Build Android'
       id: build-android-linux
       run: |
-        cd build/linux-x64
+        cd build/android-linux-x64
         make LOG=cmdlines static-libs-image
       shell: bash
       if: ${{ inputs.platform }} == 'android-linux-x64'
