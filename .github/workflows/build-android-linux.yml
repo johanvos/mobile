@@ -117,6 +117,7 @@ jobs:
       - name: 'Configure'
         run: >
           bash configure
+          --with-conf-name=${{ inputs.platform }}
           --enable-headless-only
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-build-jdk=$JAVA_HOME_17_X64
