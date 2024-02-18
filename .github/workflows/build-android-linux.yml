@@ -67,15 +67,6 @@ jobs:
     name: build
     runs-on: ubuntu-22.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        debug-level: ${{ fromJSON(inputs.debug-levels) }}
-        include:
-          - debug-level: debug
-            flags: --with-debug-level=fastdebug
-            suffix: -debug
-
     steps:
       - name: 'Checkout the JDK source'
         uses: actions/checkout@v4
