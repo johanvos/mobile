@@ -41,10 +41,9 @@ runs:
       id: bundles
       run: |
         # Rename bundles to consistent names
-        ls build
-        echo "<<<"
+        echo "build/android-linux-aarch64 contents..."
         ls build/android-linux-aarch64
-        echo ">>>"
+        echo "static libs contents..."
         ls build/android-linux-aarch64/images/static-libs/
         jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
         jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
@@ -66,7 +65,9 @@ runs:
           mv "$tests_bundle" "bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
         
+        echo "bundles contents..."
         ls bundles
+        echo "input platform: ${{ inputs.platform }}"
 
         if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle" != "" ]]; then
           echo 'bundles-found=true' >> $GITHUB_OUTPUT
