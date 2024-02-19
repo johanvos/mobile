@@ -89,7 +89,7 @@ jobs:
                 echo 'false'
                 return
               else
-                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+                input='android-linux-aarch64'
               fi
             fi
 
