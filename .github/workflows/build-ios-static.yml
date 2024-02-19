@@ -60,15 +60,6 @@ jobs:
     name: build
     runs-on: ${{ inputs.runs-on }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        debug-level: ${{ fromJSON(inputs.debug-levels) }}
-        include:
-          - debug-level: debug
-            flags: --with-debug-level=fastdebug
-            suffix: -debug
-
     steps:
       - name: 'Checkout the JDK source'
         uses: actions/checkout@v4
@@ -101,8 +92,8 @@ jobs:
           --with-conf-name=ios-macos-aarch64
           --enable-headless-only
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
-          --openjdk-target=aarch64-macos-ios \
-          --with-cups-include=/tmp/cups-2.3.6 \
+          --openjdk-target=aarch64-macos-ios
+          --with-cups-include=/tmp/cups-2.3.6
           --with-sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           ${{ matrix.flags }}
