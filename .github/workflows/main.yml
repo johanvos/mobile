@@ -34,9 +34,9 @@ on:
   workflow_dispatch:
     inputs:
       platforms:
-        description: 'Platform(s) to execute on (comma separated, e.g. "android-linux-aarch64, linux-x64, macos, aarch64")'
+        description: 'Platform(s) to execute on (comma separated, e.g. "android-linux-aarch64, ios-macos-aarch64, linux-x64, macos, aarch64")'
         required: true
-        default: 'android-linux-aarch64, linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'android-linux-aarch64, ios-macos-aarch64, linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -59,6 +59,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       android-linux-aarch64: ${{ steps.include.outputs.android-linux-aarch64 }}
+      ios-macos-aarch64: ${{ steps.include.outputs.ios-macos-aarch64 }}
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86: ${{ steps.include.outputs.linux-x86 }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
@@ -89,7 +90,7 @@ jobs:
                 echo 'false'
                 return
               else
-                input='android-linux-aarch64'
+                input='android-linux-aarch64, ios-macos-aarch64'
               fi
             fi
 
@@ -112,6 +113,7 @@ jobs:
           }
 
           echo "android-linux-aarch64=$(check_platform android-linux-aarch64 android linux aarch64)" >> $GITHUB_OUTPUT
+          echo "ios-macos-aarch64=$(check_platform ios-macos-aarch64 ios macos aarch64)" >> $GITHUB_OUTPUT
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
           echo "linux-x86=$(check_platform linux-x86 linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
@@ -129,7 +131,7 @@ jobs:
   build-android-linux-aarch64:
     name: android-linux-aarch64
     needs: select
-    uses: ./.github/workflows/build-android-linux.yml
+    uses: ./.github/workflows/build-android-static.yml
     with:
       platform: linux-x64
       gcc-major-version: '10'
@@ -137,6 +139,18 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
     if: needs.select.outputs.android-linux-aarch64 == 'true'
+
+  build-ios-mac-aarch64:
+    name: ios-mac-aarch64
+    needs: select
+    uses: ./.github/workflows/build-ios-static.yml
+    with:
+      platform: macos-aarch64
+      runs-on: 'macos-14'
+      xcode-toolset-version: '14.3.1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.ios-macos-aarch64 == 'true'
 
   build-linux-x64:
     name: linux-x64
@@ -363,6 +377,7 @@ jobs:
     if: always()
     needs:
       - build-android-linux-aarch64
+      - build-ios-macos-aarch64
       - build-linux-x64
       - build-linux-x86
       - build-linux-x64-hs-nopch
