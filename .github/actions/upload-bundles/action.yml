@@ -41,10 +41,10 @@ runs:
       id: bundles
       run: |
         # Rename bundles to consistent names
-        echo "build/android-linux-aarch64 contents..."
-        ls build/android-linux-aarch64
+        echo "build/${{ inputs.platform }} contents..."
+        ls build/${{ inputs.platform }}
         echo "static libs contents..."
-        ls build/android-linux-aarch64/images/static-libs/
+        ls build/${{ inputs.platform }}/images/static-libs/
         jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
         jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
         symbols_bundle="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}-symbols.tar.gz 2> /dev/null || true)"
@@ -87,7 +87,7 @@ runs:
     - name: 'Upload static image artifact'
       uses: actions/upload-artifact@v4
       with:
-        name: android-linux-aarch64
-        path: build/android-linux-aarch64/images/static-libs/
+        name: ${{ inputs.platform }}
+        path: build/${{ inputs.platform }}/images/static-libs/
         retention-days: 1
-      if: inputs.platform == 'android-linux-aarch64'
+      if: inputs.platform == 'android-linux-aarch64' || inputs.platform == 'ios-macos-aarch64'
