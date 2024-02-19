@@ -45,7 +45,7 @@ runs:
         cd build/${{ inputs.platform }}
         make LOG=cmdlines static-libs-image
       shell: bash
-      if: inputs.platform == 'android-linux-aarch64' || inputs.platform == 'ios-mac-aarch64'
+      if: inputs.platform == 'android-linux-aarch64' || inputs.platform == 'ios-macos-aarch64'
 
     - name: 'Build'
       id: build

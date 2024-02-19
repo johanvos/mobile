@@ -140,8 +140,8 @@ jobs:
     # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
     if: needs.select.outputs.android-linux-aarch64 == 'true'
 
-  build-ios-mac-aarch64:
-    name: ios-mac-aarch64
+  build-ios-macos-aarch64:
+    name: ios-macos-aarch64
     needs: select
     uses: ./.github/workflows/build-ios-static.yml
     with:
