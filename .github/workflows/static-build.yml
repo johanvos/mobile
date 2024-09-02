@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, Gluon and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,15 @@
 # questions.
 #
 
-name: 'OpenJDK GHA Sanity Checks'
+name: 'OpenJDK Static Builds'
 
 on:
-  push:
-    branches-ignore:
-      - master
-      - pr/*
-      - jdk*
   workflow_dispatch:
     inputs:
       platforms:
-        description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
+        description: 'Platform(s) to execute on (comma separated, e.g. "android-linux-aarch64, ios-macos-aarch64, linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86-hs, linux-x64-variants, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'android-linux-aarch64, ios-macos-aarch64, linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -61,6 +56,8 @@ jobs:
       # List of platforms to exclude by default
       EXCLUDED_PLATFORMS: 'alpine-linux-x64'
     outputs:
+      android-linux-aarch64: ${{ steps.include.outputs.android-linux-aarch64 }}
+      ios-macos-aarch64: ${{ steps.include.outputs.ios-macos-aarch64 }}
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
@@ -96,7 +93,7 @@ jobs:
                 echo 'false'
                 return
               else
-                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+                input='android-linux-aarch64, ios-macos-aarch64' # what should we do here?
               fi
             fi
 
@@ -132,6 +129,8 @@ jobs:
             echo 'false'
           }
 
+          echo "android-linux-aarch64=$(check_platform android-linux-aarch64 android linux aarch64)" >> $GITHUB_OUTPUT
+          echo "ios-macos-aarch64=$(check_platform ios-macos-aarch64 ios macos aarch64)" >> $GITHUB_OUTPUT
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
           echo "linux-x86-hs=$(check_platform linux-x86-hs linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
@@ -147,112 +146,45 @@ jobs:
   ### Build jobs
   ###
 
+  build-android-linux-aarch64:
+    name: android-linux-aarch64
+    needs: select
+    uses: ./.github/workflows/build-android-linux.yml
+    with:
+      platform: android-linux-aarch64
+      make-target: 'static-libs'
+      gcc-major-version: '10'
+      debug-levels: '[ "release" ]'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.android-linux-aarch64 == 'true'
+
+  build-ios-macos-aarch64:
+    name: ios-macos-aarch64
+    needs: select
+    uses: ./.github/workflows/build-ios-macos.yml
+    with:
+      platform: ios-macos-aarch64
+      runs-on: 'macos-14'
+      make-target: 'static-libs'
+      xcode-toolset-version: '14.3.1'
+      debug-levels: '[ "release" ]'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.ios-macos-aarch64 == 'true'
+
   build-linux-x64:
     name: linux-x64
     needs: select
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
+      make-target: 'static-libs'
       gcc-major-version: '10'
+      debug-levels: '[ "release" ]'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64 == 'true'
-
-  build-linux-x86-hs:
-    name: linux-x86-hs
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x86
-      make-target: 'hotspot'
-      gcc-major-version: '10'
-      gcc-package-suffix: '-multilib'
-      apt-architecture: 'i386'
-      # Some multilib libraries do not have proper inter-dependencies, so we have to
-      # install their dependencies manually.
-      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libffi-dev:i386'
-      extra-conf-options: '--with-target-bits=32 --enable-fallback-linker --enable-libffi-bundling'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x86-hs == 'true'
-
-  build-linux-x64-hs-nopch:
-    name: linux-x64-hs-nopch
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      make-target: 'hotspot'
-      debug-levels: '[ "debug" ]'
-      gcc-major-version: '10'
-      extra-conf-options: '--disable-precompiled-headers'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x64-variants == 'true'
-
-  build-linux-x64-hs-zero:
-    name: linux-x64-hs-zero
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      make-target: 'hotspot'
-      debug-levels: '[ "debug" ]'
-      gcc-major-version: '10'
-      extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x64-variants == 'true'
-
-  build-linux-x64-hs-minimal:
-    name: linux-x64-hs-minimal
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      make-target: 'hotspot'
-      debug-levels: '[ "debug" ]'
-      gcc-major-version: '10'
-      extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x64-variants == 'true'
-
-  build-linux-x64-hs-optimized:
-    name: linux-x64-hs-optimized
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      make-target: 'hotspot'
-      # Technically this is not the "debug" level, but we can't inject a new matrix state for just this job
-      debug-levels: '[ "debug" ]'
-      gcc-major-version: '10'
-      extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x64-variants == 'true'
-
-  build-linux-cross-compile:
-    name: linux-cross-compile
-    needs:
-      - select
-    uses: ./.github/workflows/build-cross-compile.yml
-    with:
-      gcc-major-version: '10'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-cross-compile == 'true'
-
-  build-alpine-linux-x64:
-    name: alpine-linux-x64
-    needs: select
-    uses: ./.github/workflows/build-alpine-linux.yml
-    with:
-      platform: alpine-linux-x64
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.alpine-linux-x64 == 'true'
 
   build-macos-x64:
     name: macos-x64
@@ -261,7 +193,9 @@ jobs:
     with:
       platform: macos-x64
       runs-on: 'macos-13'
+      make-target: 'static-libs'
       xcode-toolset-version: '14.3.1'
+      debug-levels: '[ "release" ]'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-x64 == 'true'
@@ -273,7 +207,9 @@ jobs:
     with:
       platform: macos-aarch64
       runs-on: 'macos-14'
+      make-target: 'static-libs'
       xcode-toolset-version: '14.3.1'
+      debug-levels: '[ "release" ]'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-aarch64 == 'true'
@@ -284,8 +220,10 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
+      make-target: 'static-libs'
       msvc-toolset-version: '14.29'
       msvc-toolset-architecture: 'x86.x64'
+      debug-levels: '[ "release" ]'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-x64 == 'true'
@@ -296,73 +234,14 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-aarch64
+      make-target: 'static-libs'
       msvc-toolset-version: '14.29'
       msvc-toolset-architecture: 'arm64'
-      make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
+      debug-levels: '[ "release" ]'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-aarch64 == 'true'
-
-  build-docs:
-    name: docs
-    needs: select
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      debug-levels: '[ "debug" ]'
-      make-target: 'docs-jdk-bundles'
-      # Make sure we never try to make full docs, since that would require a
-      # build JDK, and we do not need the additional testing of the graphs.
-      extra-conf-options: '--disable-full-docs'
-      gcc-major-version: '10'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.docs == 'true'
-
-  ###
-  ### Test jobs
-  ###
-
-  test-linux-x64:
-    name: linux-x64
-    needs:
-      - build-linux-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-x64
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
-
-  test-macos-x64:
-    name: macos-x64
-    needs:
-      - build-macos-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-x64
-      bootjdk-platform: macos-x64
-      runs-on: macos-13
-
-  test-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - build-macos-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-aarch64
-      bootjdk-platform: macos-aarch64
-      runs-on: macos-14
-
-  test-windows-x64:
-    name: windows-x64
-    needs:
-      - build-windows-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: windows-x64
-      bootjdk-platform: windows-x64
-      runs-on: windows-2019
 
   # Remove bundles so they are not misconstrued as binary distributions from the JDK project
   remove-bundles:
@@ -370,24 +249,17 @@ jobs:
     runs-on: ubuntu-22.04
     if: always()
     needs:
+      - build-android-linux-aarch64
+      - build-ios-macos-aarch64
       - build-linux-x64
-      - build-linux-x86-hs
-      - build-linux-x64-hs-nopch
-      - build-linux-x64-hs-zero
-      - build-linux-x64-hs-minimal
-      - build-linux-x64-hs-optimized
-      - build-linux-cross-compile
-      - build-alpine-linux-x64
       - build-macos-x64
       - build-macos-aarch64
       - build-windows-x64
       - build-windows-aarch64
-      - test-linux-x64
-      - test-macos-x64
-      - test-windows-x64
 
     steps:
       - name: 'Remove bundle artifacts'
+        if: needs.select.outputs.android-linux-aarch64 == 'false' # should this be here?
         run: |
           # Find and remove all bundle artifacts
           # See: https://docs.github.com/en/rest/actions/artifacts?apiVersion=2022-11-28
