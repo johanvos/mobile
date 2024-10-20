@@ -238,6 +238,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     char jvmpath[MAXPATHLEN];
     char jrepath[MAXPATHLEN];
     char jvmcfg[MAXPATHLEN];
+fprintf(stderr, "in launch, pname = %s\n", pname);
 
     _fVersion = fullversion;
     _launcher_name = lname;
@@ -245,7 +246,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
 
+fprintf(stderr, "init0\n");
     InitLauncher(javaw);
+fprintf(stderr, "init1\n");
     DumpState();
     if (JLI_IsTraceLauncher()) {
         char *env_in;
@@ -264,11 +267,13 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         AddOption("-Dsun.java.launcher.diag=true", NULL);
     }
 
+fprintf(stderr, "init2A\n");
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
                                jvmcfg,  sizeof(jvmcfg));
 
+fprintf(stderr, "init3\n");
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
 
@@ -279,6 +284,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
+fprintf(stderr, "init4\n");
 
     if (JLI_IsTraceLauncher()) {
         end   = CurrentTimeMicros();

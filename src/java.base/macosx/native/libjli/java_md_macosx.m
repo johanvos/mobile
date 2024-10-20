@@ -350,6 +350,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
+fprintf(stderr, "getJREPath\n");
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
         JLI_ReportErrorMessage(JRE_ERROR1);
@@ -358,6 +359,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
                  jrepath, FILESEP, FILESEP);
     /* Find the specified JVM type */
+fprintf(stderr, "getKnownVM\n");
     if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
         JLI_ReportErrorMessage(CFG_ERROR7);
         exit(1);
@@ -365,12 +367,15 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     jvmpath[0] = '\0';
     jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+fprintf(stderr, "jvmtype = %s\n", jvmtype);
     if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
         JLI_ReportErrorMessage(CFG_ERROR9);
         exit(4);
     }
 
+fprintf(stderr, "GetJVMPath\n");
     if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+fprintf(stderr, "GetJVMPath BUMMER\n");
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
@@ -380,7 +385,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
      * thread. Spawn off a new thread to run main() and pass
      * this thread off to the Cocoa event loop.
      */
+fprintf(stderr, "macosxstartup\n");
     MacOSXStartup(argc, argv);
+fprintf(stderr, "macosxstartup done\n");
 
     /*
      * we seem to have everything we need

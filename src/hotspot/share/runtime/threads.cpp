@@ -410,6 +410,7 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
 }
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
+fprintf(stderr, "init threads\n");
   extern void JDK_Version_init();
 
   // Preinitialize version info.
@@ -430,7 +431,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
+  fprintf(stderr, "Now ask to enable wx\n");
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
+  fprintf(stderr, "Did ask to enable wx\n");
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;

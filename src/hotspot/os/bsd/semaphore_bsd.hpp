@@ -55,7 +55,9 @@ class OSXSemaphore : public CHeapObj<mtInternal>{
   bool timedwait(int64_t millis);
 };
 
+// #ifndef __IOS__
 typedef OSXSemaphore SemaphoreImpl;
+// #endif
 
 #endif // __APPLE__
 

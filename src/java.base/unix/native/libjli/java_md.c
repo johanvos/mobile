@@ -277,8 +277,13 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
 
+    SetExecname(*pargv);
+    if (JLI_IsStaticallyLinked()) {
+        return;
+    }
     char * jvmtype = NULL;
     char **argv = *pargv;
+fprintf(stderr, "UNIX cEe\n");
 
 #ifdef SETENV_REQUIRED
     jboolean mustsetenv = JNI_FALSE;
@@ -291,11 +296,13 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif  /* SETENV_REQUIRED */
 
     /* Compute/set the name of the executable */
-    SetExecname(*pargv);
+fprintf(stderr, "UNIX cEe 2\n");
 
     /* Check to see if the jvmpath exists */
     /* Find out where the JRE is that we will be using. */
+#ifndef __IOS__
     if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
+fprintf(stderr, "JREpath issue\n");
         JLI_ReportErrorMessage(JRE_ERROR1);
         exit(2);
     }
@@ -314,10 +321,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(4);
     }
 
+fprintf(stderr, "type = %s\n", jvmtype);
     if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+fprintf(stderr, "BUMMER path\n");
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
+#endif
+fprintf(stderr, "got path\n");
     /*
      * we seem to have everything we need, so without further ado
      * we return back, otherwise proceed to set the environment.
@@ -519,16 +530,25 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
-    libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
-    if (libjvm == NULL) {
-        JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
-        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
-        return JNI_FALSE;
+    if (JLI_IsStaticallyLinked()) {
+        libjvm = dlopen(NULL, RTLD_NOW + RTLD_GLOBAL);
+    } else {
+        libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+        if (libjvm == NULL) {
+            JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
+            JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+            return JNI_FALSE;
+        }
     }
 
-    ifn->CreateJavaVM = (CreateJavaVM_t)
-        dlsym(libjvm, "JNI_CreateJavaVM");
+    if (JLI_IsStaticallyLinked()) {
+        ifn->CreateJavaVM = JNI_CreateJavaVM;
+    } else {
+        ifn->CreateJavaVM = (CreateJavaVM_t)
+            dlsym(libjvm, "JNI_CreateJavaVM");
+    }
     if (ifn->CreateJavaVM == NULL) {
+fprintf(stderr, "bummer\n");
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
     }

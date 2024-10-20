@@ -21,6 +21,7 @@
  * questions.
  *
  */
+#ifndef __IOS__
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -30,7 +31,9 @@
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef __APPLE__
+  #ifndef __IOS__
   #import <libproc.h>
+  #endif
   #include <sys/time.h>
   #include <sys/sysctl.h>
   #include <mach/mach.h>
@@ -38,7 +41,9 @@
   #include <sys/socket.h>
   #include <net/if.h>
   #include <net/if_dl.h>
+  #ifndef __IOS__
   #include <net/route.h>
+  #endif
   #include <sys/times.h>
 #endif
 
@@ -483,3 +488,4 @@ bool NetworkPerformanceInterface::initialize() {
 int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {
   return _impl->network_utilization(network_interfaces);
 }
+#endif
