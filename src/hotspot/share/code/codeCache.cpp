@@ -352,7 +352,9 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
+fprintf(stderr, "RHM, align = %ld, size = %ld, size = %ld\n", rs_align, rs_size, rs_ps);
   ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+fprintf(stderr, "RHMDONE, align = %ld, size = %ld, size = %ld\n", rs_align, rs_size, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));

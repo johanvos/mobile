@@ -65,7 +65,8 @@ class LogMessageBuffer;
 #endif
 
 // Convenience macro to test if the logging is enabled on the specified level for given tags.
-#define log_is_enabled(level, ...) (LogImpl<LOG_TAGS(__VA_ARGS__)>::is_level(LogLevel::level))
+// #define log_is_enabled(level, ...) (LogImpl<LOG_TAGS(__VA_ARGS__)>::is_level(LogLevel::level))
+#define log_is_enabled(level, ...) 1
 
 //
 // Log class for more advanced logging scenarios.
@@ -181,7 +182,8 @@ public:
   }
 
   static bool is_enabled() {
-    return LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().is_level(level);
+    return true;
+    // return LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().is_level(level);
   }
 
   static bool develop_is_enabled() {

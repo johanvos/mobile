@@ -82,6 +82,7 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t p
 
 // Helper method
 static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable) {
+fprintf(stderr, "[JVDBG] attempt_map_or_reserve mem with fd = %d and exe = %d and size = %d and base = %p\b",fd, executable,size, base);
   if (fd != -1) {
     return os::attempt_map_memory_to_file_at(base, size, fd);
   }
@@ -90,6 +91,7 @@ static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, b
 
 // Helper method
 static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
+fprintf(stderr, "[JVDBG] attempt_map_or_reserve mem with fd = %d and exe = %d and size = %d \n",fd, executable,size);
   if (fd != -1) {
     return os::map_memory_to_file(size, fd);
   }
@@ -155,6 +157,7 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
 
 static char* reserve_memory(char* requested_address, const size_t size,
                             const size_t alignment, int fd, bool exec) {
+fprintf(stderr, "[JVDBG] reserve1\n");
   char* base;
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
@@ -168,7 +171,9 @@ static char* reserve_memory(char* requested_address, const size_t size,
     // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
+fprintf(stderr, "[JVDBG] reserveMemory, req nullptr\n");
     base = map_or_reserve_memory(size, fd, exec);
+fprintf(stderr, "[JVDBG] reserveMemory, req base = %p\n",base);
     // Check alignment constraints. This is only needed when there is
     // no requested address.
     if (!is_aligned(base, alignment)) {
@@ -216,11 +221,13 @@ void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment
   _noaccess_prefix = 0;
 }
 
+extern void failInApp(void);
 void ReservedSpace::reserve(size_t size,
                             size_t alignment,
                             size_t page_size,
                             char* requested_address,
                             bool executable) {
+fprintf(stderr, "[JVDBG] reserve2\n");
   assert(is_aligned(size, alignment), "Size must be aligned to the requested alignment");
 
   // There are basically three different cases that we need to handle below:
@@ -231,7 +238,9 @@ void ReservedSpace::reserve(size_t size,
   // committed up front. To record this the ReservedSpace is marked 'special'.
 
   // == Case 1 ==
+fprintf(stderr, "fdforheap = %d\n", _fd_for_heap);
   if (_fd_for_heap != -1) {
+fprintf(stderr, "case 1\n");
     // When there is a backing file directory for this space then whether
     // large pages are allocated is up to the filesystem of the backing file.
     // So UseLargePages is not taken into account for this reservation.
@@ -245,6 +254,7 @@ void ReservedSpace::reserve(size_t size,
 
   // == Case 2 ==
   if (use_explicit_large_pages(page_size)) {
+fprintf(stderr, "case 2\n");
     // System can't commit large pages i.e. use transparent huge pages and
     // the caller requested large pages. To satisfy this request we use
     // explicit large pages and these have to be committed up front to ensure
@@ -266,11 +276,14 @@ void ReservedSpace::reserve(size_t size,
   }
 
   // == Case 3 ==
+fprintf(stderr, "case 3, requested = %p\n", requested_address);
   char* base = reserve_memory(requested_address, size, alignment, -1, executable);
   if (base != nullptr) {
     // Successful mapping.
     initialize_members(base, size, alignment, page_size, false, executable);
-  }
+  } else {
+failInApp();
+}
 }
 
 void ReservedSpace::initialize(size_t size,
@@ -278,6 +291,7 @@ void ReservedSpace::initialize(size_t size,
                                size_t page_size,
                                char* requested_address,
                                bool executable) {
+fprintf(stderr, "initialize space\n");
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,
          "size not aligned to os::vm_allocation_granularity()");
@@ -298,11 +312,14 @@ void ReservedSpace::initialize(size_t size,
   alignment = MAX2(alignment, os::vm_page_size());
 
   // Reserve the memory.
+fprintf(stderr, "try to reserve, base = %p\n", _base);
   reserve(size, alignment, page_size, requested_address, executable);
+fprintf(stderr, "tried to reserve, base = %p\n", _base);
 
   // Check that the requested address is used if given.
   if (failed_to_reserve_as_requested(_base, requested_address)) {
     // OS ignored the requested address, release the reservation.
+fprintf(stderr, "FAILED tried to reserve, base = %p\n", _base);
     release();
     return;
   }
@@ -410,13 +427,14 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
                                          size_t alignment,
                                          size_t page_size,
                                          char* requested_address) {
+fprintf(stderr, "try_reserve_heap now\n");
   if (_base != nullptr) {
     // We tried before, but we didn't like the address delivered.
     release();
   }
 
   // Try to reserve the memory for the heap.
-  log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
+  log_info(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
                              " heap of size " SIZE_FORMAT_X,
                              p2i(requested_address),
                              size);
@@ -670,8 +688,11 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
+fprintf(stderr, "rsc1\n");
   initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
+fprintf(stderr, "rsc2, base = %p\n", base());
   MemTracker::record_virtual_memory_tag((address)base(), mtCode);
+fprintf(stderr, "rsc3, base = %p\n", base());
 }
 
 // VirtualSpace

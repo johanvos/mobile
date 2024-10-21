@@ -1805,9 +1805,11 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // function returns null to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+  const int rflags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
       MACOS_ONLY(| (exec ? MAP_JIT : 0));
-
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+      MACOS_ONLY(| (0));
+  fprintf(stderr, "flags = %d and not %d\n", flags, rflags);
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
@@ -1835,7 +1837,10 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-  return anon_mmap(nullptr /* addr */, bytes, exec);
+fprintf(stderr, "[BSD] resmem, size = %d and exec = %d\n", bytes, exec);
+  char* answer = anon_mmap(nullptr /* addr */, bytes, exec);
+fprintf(stderr, "[BSD] resmem, answer = %p\n", answer);
+  return answer;
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {

@@ -1889,7 +1889,9 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 }
 
 char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
+fprintf(stderr, "[JVDBG] OS, reservemem\n");
   char* result = pd_reserve_memory(bytes, executable);
+fprintf(stderr, "[JVDBG] res = %p\n", result);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
