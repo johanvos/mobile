@@ -407,6 +407,7 @@ void os::init_system_properties_values() {
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
+failInApp();
       vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
@@ -487,6 +488,7 @@ void os::init_system_properties_values() {
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
+failInApp();
         vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
@@ -880,7 +882,9 @@ static int local_dladdr(const void* addr, Dl_info* info) {
     return 0;
   }
 #endif
-  return dladdr(addr, info);
+  int answer = dladdr(addr, info);
+fprintf(stderr, "result of dladdr = %s\n", info->dli_fname);
+return answer;
 }
 
 // This must be hard coded because it's the system's temporary
@@ -990,6 +994,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   if (local_dladdr((void*)addr, &dlinfo) != 0) {
     if (dlinfo.dli_fname != nullptr) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+fprintf(stderr, "ADD = %s\n", buf);
     }
     if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
@@ -1495,8 +1500,10 @@ void os::jvm_path(char *buf, jint buflen) {
   // Lazy resolve the path to current module.
   if (saved_jvm_path[0] != 0) {
     strcpy(buf, saved_jvm_path);
+fprintf(stderr, "BUFFFF1 = %s\n", buf);
     return;
   }
+fprintf(stderr, "BUFFFF2 = %s\n", buf);
 
   char dli_fname[MAXPATHLEN];
   dli_fname[0] = '\0';
@@ -1508,7 +1515,9 @@ void os::jvm_path(char *buf, jint buflen) {
   if (ret && dli_fname[0] != '\0') {
     rp = os::realpath(dli_fname, buf, buflen);
   }
+fprintf(stderr, "BUFFFF3 = %s\n", buf);
   if (rp == nullptr) {
+fprintf(stderr, "BUFFFF4 = %s\n", buf);
     return;
   }
 
@@ -1540,8 +1549,10 @@ void os::jvm_path(char *buf, jint buflen) {
 
         rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
+fprintf(stderr, "BUFFFF5 = %s\n", buf);
           return;
         }
+fprintf(stderr, "BUFFFF6 = %s\n", buf);
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
@@ -1562,6 +1573,7 @@ void os::jvm_path(char *buf, jint buflen) {
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }
+fprintf(stderr, "BUFFFF = %s\n", buf);
 
         // If the path exists within JAVA_HOME, add the JVM library name
         // to complete the path to JVM being overridden.  Otherwise fallback

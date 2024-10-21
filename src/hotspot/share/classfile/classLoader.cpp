@@ -527,8 +527,16 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
   }
 }
 
+#ifdef __IOS__
+extern const char* get_ios_class_path();
+#endif
+
 void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
+#ifndef __IOS__
   const char* bootcp = Arguments::get_boot_class_path();
+#else
+  const char* bootcp = get_ios_class_path();
+#endif
   assert(bootcp != nullptr, "Boot class path must not be nullptr");
   if (PrintSharedArchiveAndExit) {
     // Don't print bootcp - this is the bootcp of this current VM process, not necessarily
@@ -658,6 +666,8 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   ResourceMark rm(current);
   ClasspathStream cp_stream(class_path);
   bool set_base_piece = true;
+  fprintf(stderr, "CLASSPATH = %s\n", class_path);
+  fprintf(stderr, "cplen = %d\n", strlen(class_path));
 
 #if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
@@ -669,6 +679,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
+fprintf(stderr, "consider path %s\n", path);
 
     if (set_base_piece) {
       // The first time through the bootstrap_search setup, it must be determined
@@ -955,16 +966,35 @@ void* ClassLoader::dll_lookup(void* lib, const char* name, const char* path) {
 
 void ClassLoader::load_java_library() {
   assert(CanonicalizeEntry == nullptr, "should not load java library twice");
+  if (is_vm_statically_linked()) {
+    CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::lookup_function("JDK_Canonicalize"));
+    assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize");
+    return;
+  }
   void *javalib_handle = os::native_java_library();
   if (javalib_handle == nullptr) {
     vm_exit_during_initialization("Unable to load java library", nullptr);
   }
 
   CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, dll_lookup(javalib_handle, "JDK_Canonicalize", nullptr));
+  assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize in java library");
 }
 
 void ClassLoader::load_jimage_library() {
   assert(JImageOpen == nullptr, "should not load jimage library twice");
+  if (is_vm_statically_linked()) {
+fprintf(stderr, "try to open jimage\n");
+      // JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::lookup_function("JIMAGE_Open"));
+      JImageOpen = JIMAGE_Open;
+fprintf(stderr, "tried to open jimage at %p\n", JImageOpen);
+      JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
+      JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
+      JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+      assert(JImageOpen != nullptr && JImageClose != nullptr &&
+            JImageFindResource != nullptr && JImageGetResource != nullptr,
+            "could not lookup all jimage library functions");
+      return;
+    }
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = nullptr;

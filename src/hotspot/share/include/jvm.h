@@ -56,6 +56,8 @@ extern "C" {
  * namely the jio_xxxprintf functions, are included from jvm_io.h.
  */
 
+extern void failInApp(void);
+
 
 /*************************************************************************
  PART 1: Functions for Native Libraries

@@ -512,7 +512,12 @@ extern struct JavaVM_ main_vm;
 static void* _native_java_library = nullptr;
 
 void* os::native_java_library() {
+  fprintf(stderr, "native_java_lib asked, ptr = %p\n", _native_java_library);
   if (_native_java_library == nullptr) {
+    if (is_vm_statically_linked()) {
+      _native_java_library = get_default_process_handle();
+      return _native_java_library;
+    }
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
@@ -1471,13 +1476,19 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 
   // modular image if "modules" jimage exists
   char* jimage = format_boot_path("%/lib/" MODULES_IMAGE_NAME, home, home_len, fileSep, pathSep);
+  fprintf(stderr, "jimage = %p\n", jimage);
+  fprintf(stderr, "jimage = %s\n", jimage);
   if (jimage == nullptr) return false;
+#ifndef __IOS__
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
+#endif
     Arguments::set_boot_class_path(jimage, true);
     FREE_C_HEAP_ARRAY(char, jimage);
     return true;
+#ifndef __IOS__
   }
+#endif
   FREE_C_HEAP_ARRAY(char, jimage);
 
   // check if developer build with exploded modules
