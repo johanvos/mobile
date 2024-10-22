@@ -1079,6 +1079,7 @@ int os::stat(const char *path, struct stat *sbuf) {
 fprintf(stderr, "stat asked for %s\n", path);
   int answer = ::stat(path, sbuf);
 fprintf(stderr, "stat asked for %s returns %d\n", path, answer);
+if (answer == -1) failInApp();
   return answer;
 }
 

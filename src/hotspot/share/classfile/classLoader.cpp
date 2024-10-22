@@ -716,12 +716,23 @@ fprintf(stderr, "consider path %s\n", path);
 // Gets the exploded path for the named module. The memory for the path
 // is allocated on the C heap if `c_heap` is true otherwise in the resource area.
 static const char* get_exploded_module_path(const char* module_name, bool c_heap) {
+#ifndef __IOS__
   const char *home = Arguments::get_java_home();
+#else
+  const char* home = get_ios_class_path();
+#endif
   const char file_sep = os::file_separator()[0];
   // 10 represents the length of "modules" + 2 file separators + \0
   size_t len = strlen(home) + strlen(module_name) + 10;
+#ifdef __IOS
+  len = len - 9;
+#endif
   char *path = c_heap ? NEW_C_HEAP_ARRAY(char, len, mtModule) : NEW_RESOURCE_ARRAY(char, len);
+#ifndef __IOS__
   jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+#else
+  jio_snprintf(path, len, "%s%c%s", home, file_sep, module_name);
+#endif
   return path;
 }
 

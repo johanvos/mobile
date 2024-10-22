@@ -282,7 +282,8 @@ fprintf(stderr, "case 3, requested = %p\n", requested_address);
     // Successful mapping.
     initialize_members(base, size, alignment, page_size, false, executable);
   } else {
-failInApp();
+fprintf(stderr, "no luck\n");
+// failInApp();
 }
 }
 
