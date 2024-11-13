@@ -30,6 +30,7 @@
 #include "memory/metaspace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+extern void failInApp(void);
 
 // Helper function; reserve at an address that is compatible with EOR
 static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
@@ -80,6 +81,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   return result;
 }
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
+fprintf(stderr, "[JVDBG] rasfcc1\n");
 
   char* result = nullptr;
 
@@ -87,6 +89,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (optimize_for_zero_base) {
     result = reserve_address_space_for_unscaled_encoding(size, aslr);
   }
+fprintf(stderr, "[JVDBG] rasfcc2, res = %p\n", result);
 
   // If this fails, we don't bother aiming for zero-based encoding (base=0 shift>0), since it has no
   // advantages over EOR or movk mode.
@@ -95,11 +98,13 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     result = reserve_at_eor_compatible_address(size, aslr);
   }
+fprintf(stderr, "[JVDBG] rasfcc3, res = %p\n", result);
 
   // Movk-compatible reservation via probing.
   if (result == nullptr) {
     result = reserve_address_space_for_16bit_move(size, aslr);
   }
+fprintf(stderr, "[JVDBG] rasfcc4, res = %p\n", result);
 
   // Movk-compatible reservation via overallocation.
   // If that failed, attempt to allocate at any 4G-aligned address. Let the system decide where. For ASLR,
@@ -110,15 +115,19 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   // - this technique leads to temporary over-reservation of address space; it will spike the vsize of
   //   the process. Therefore it may fail if a vsize limit is in place (e.g. ulimit -v).
   if (result == nullptr) {
+fprintf(stderr, "[JVDBG] rasfcc5, res = %p\n", result);
     constexpr size_t alignment = nth_bit(32);
     log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
     result = os::reserve_memory_aligned(size, alignment, false);
+fprintf(stderr, "[JVDBG] rasfcc6, res = %p\n", result);
   }
 
   return result;
 }
 
 void CompressedKlassPointers::initialize(address addr, size_t len) {
+fprintf(stderr, "[JVDBG] CKP, init addr = %p and len = %ld\n", addr, len);
+failInApp();
   constexpr uintptr_t unscaled_max = nth_bit(32);
   assert(len <= unscaled_max, "Klass range larger than 32 bits?");
 

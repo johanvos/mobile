@@ -32,7 +32,8 @@
 #include "utilities/zipLibrary.hpp"
 
  // Entry points in zip.dll for loading zip/jar file entries
-typedef void**(*ZIP_Open_t)(const char* name, char** pmsg);
+extern "C" jzfile* ZIP_Open(const char *name, char **pmsg);
+// typedef void**(*ZIP_Open_t)(const char* name, char** pmsg);
 typedef void(*ZIP_Close_t)(jzfile* zip);
 typedef jzentry* (*ZIP_FindEntry_t)(jzfile* zip, const char* name, jint* sizeP, jint* nameLen);
 typedef jboolean(*ZIP_ReadEntry_t)(jzfile* zip, jzentry* entry, unsigned char* buf, char* namebuf);
@@ -40,11 +41,17 @@ typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
+#ifdef __IOS__ 
+extern "C" jint ZIP_CRC32 (jint crc, const jbyte *buf, jint len);
+
+#endif
+#ifndef __IOS__
 static ZIP_Open_t ZIP_Open = nullptr;
+static ZIP_CRC32_t ZIP_CRC32 = nullptr;
+#endif
 static ZIP_Close_t ZIP_Close = nullptr;
 static ZIP_FindEntry_t ZIP_FindEntry = nullptr;
 static ZIP_ReadEntry_t ZIP_ReadEntry = nullptr;
-static ZIP_CRC32_t ZIP_CRC32 = nullptr;
 static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
 
@@ -72,6 +79,7 @@ static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_fail
 
 static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   assert(_zip_handle != nullptr, "invariant");
+#ifndef __IOS__
   ZIP_Open = CAST_TO_FN_PTR(ZIP_Open_t, dll_lookup("ZIP_Open", path, vm_exit_on_failure));
   ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path, vm_exit_on_failure));
   ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
@@ -82,10 +90,13 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   // and if possible, streamline setting all entry points consistently.
   ZIP_GZip_InitParams = CAST_TO_FN_PTR(ZIP_GZip_InitParams_t, dll_lookup("ZIP_GZip_InitParams", path, false));
   ZIP_GZip_Fully = CAST_TO_FN_PTR(ZIP_GZip_Fully_t, dll_lookup("ZIP_GZip_Fully", path, false));
+#endif
 }
 
 static void load_zip_library(bool vm_exit_on_failure) {
   assert(!is_loaded(), "should not load zip library twice");
+fprintf(stderr, "[JVDBG] load_zip_library\n");
+#ifndef __IOS__
   char path[JVM_MAXPATHLEN];
   if (os::dll_locate_lib(&path[0], sizeof path, Arguments::get_dll_dir(), "zip")) {
     char ebuf[1024];
@@ -100,6 +111,7 @@ static void load_zip_library(bool vm_exit_on_failure) {
   store_function_pointers(&path[0], vm_exit_on_failure);
   Atomic::release_store(&_loaded, true);
   assert(is_loaded(), "invariant");
+#endif
 }
 
 //
@@ -133,12 +145,17 @@ class ZipLibraryLoaderLock : public StackObj {
 Semaphore ZipLibraryLoaderLock::_lock(1);
 
 static void initialize(bool vm_exit_on_failure = true) {
+fprintf(stderr, "[JVDBG] ziplib initialize\n");
   if (is_loaded()) {
+fprintf(stderr, "[JVDBG] ziplib initialize is loaded\n");
     return;
   }
+fprintf(stderr, "[JVDBG] ziplib initialize not loaded\n");
   ZipLibraryLoaderLock lock;
   if (not_loaded()) {
+fprintf(stderr, "[JVDBG] ziplib initialize needs loaded\n");
     load_zip_library(vm_exit_on_failure);
+fprintf(stderr, "[JVDBG] ziplib initialize did loaded\n");
   }
 }
 
@@ -168,6 +185,7 @@ jboolean ZipLibrary::read_entry(jzfile* zip, jzentry* entry, unsigned char* buf,
 
 jint ZipLibrary::crc32(jint crc, const jbyte* buf, jint len) {
   initialize();
+fprintf(stderr, "initialized, and zip_crc32 = %p\n", ZIP_CRC32);
   assert(ZIP_CRC32 != nullptr, "invariant");
   return ZIP_CRC32(crc, buf, len);
 }

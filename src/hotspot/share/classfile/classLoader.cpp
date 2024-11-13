@@ -89,6 +89,7 @@
 typedef int (*canonicalize_fn_t)(const char *orig, char *out, int len);
 
 static canonicalize_fn_t CanonicalizeEntry  = nullptr;
+extern "C" int JDK_Canonicalize(const char *orig, char *out, int len);
 
 // Entry points for jimage.dll for loading jimage file entries
 
@@ -667,7 +668,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   ClasspathStream cp_stream(class_path);
   bool set_base_piece = true;
   fprintf(stderr, "CLASSPATH = %s\n", class_path);
-  fprintf(stderr, "cplen = %d\n", strlen(class_path));
+  fprintf(stderr, "cplen = %zu\n", strlen(class_path));
 
 #if INCLUDE_CDS
   if (CDSConfig::is_dumping_archive()) {
@@ -681,6 +682,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
     const char* path = cp_stream.get_next();
 fprintf(stderr, "consider path %s\n", path);
 
+fprintf(stderr, "SBSP1\n");
     if (set_base_piece) {
       // The first time through the bootstrap_search setup, it must be determined
       // what the base or core piece of the boot loader search is.  Either a java runtime
@@ -688,14 +690,22 @@ fprintf(stderr, "consider path %s\n", path);
       assert(string_ends_with(path, MODULES_IMAGE_NAME) || string_ends_with(path, JAVA_BASE_NAME),
              "Incorrect boot loader search path, no java runtime image or " JAVA_BASE_NAME " exploded build");
       struct stat st;
+fprintf(stderr, "SBSP2\n");
       if (os::stat(path, &st) == 0) {
+fprintf(stderr, "SBSP3, file = %p\n", JImage_file);
         // Directory found
         if (JImage_file != nullptr) {
+fprintf(stderr, "SBSP4\n");
           assert(Arguments::has_jimage(), "sanity check");
           const char* canonical_path = get_canonical_path(path, current);
           assert(canonical_path != nullptr, "canonical_path issue");
 
+fprintf(stderr, "SBSP5\n");
           _jrt_entry = new ClassPathImageEntry(JImage_file, canonical_path);
+fprintf(stderr, "SBSP6\n");
+fprintf(stderr, "[JVDBG] cpie jrt_entry = %p\n", _jrt_entry);
+fprintf(stderr, "[JVDBG] cpie jrt_entryismod = %d\n", _jrt_entry->is_modules_image());
+fprintf(stderr, "[JVDBG] cpie jrt_entryimage = %p\n", _jrt_entry->jimage());
           assert(_jrt_entry != nullptr && _jrt_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != nullptr, "No java runtime image");
         } // else it's an exploded build.
@@ -793,6 +803,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     if (zip != nullptr && error_msg == nullptr) {
       new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
     } else {
+fprintf(stderr, "[JVDBG] CCPE has zip at %p and error: %s\n", zip, error_msg);
 #if INCLUDE_CDS
       ClassLoaderExt::set_has_non_jar_in_classpath();
 #endif
@@ -805,6 +816,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     new_entry = new ClassPathDirEntry(path);
     log_info(class, load)("path: %s", path);
   }
+fprintf(stderr, "will return entry %p\n", new_entry);
   return new_entry;
 }
 
@@ -976,9 +988,13 @@ void* ClassLoader::dll_lookup(void* lib, const char* name, const char* path) {
 }
 
 void ClassLoader::load_java_library() {
+  fprintf(stderr, "[JVDBG] load_java_lib, canentry = %p\n", CanonicalizeEntry);
   assert(CanonicalizeEntry == nullptr, "should not load java library twice");
   if (is_vm_statically_linked()) {
     CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::lookup_function("JDK_Canonicalize"));
+    fprintf(stderr, "result of lookup = %p\n", os::lookup_function("JDK_Canonicalize"));
+    CanonicalizeEntry = JDK_Canonicalize;
+    fprintf(stderr, "[JVDBG] load_java_lib, canentry loaded at %p\n", CanonicalizeEntry);
     assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize");
     return;
   }
@@ -1161,9 +1177,55 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
   return nullptr;
 }
 
+const unsigned char classbytes[12] = {0xCA, 0xFE, 0xBA, 0xBE,  0x00, 0x00, 0x00, 0x44, 0x00, 0x7b, 0x07, 0x00};
+extern unsigned char bc_java_lang_object[];
+extern unsigned int embedded_classes_count;
+typedef struct {
+    const char* class_name;
+    const unsigned char* bytecode;
+    const unsigned int length;
+} EmbeddedClassData;
+extern const EmbeddedClassData embedded_classes[];
+
+void normalize_class_name(const char* input_name, char* output_name) {
+    size_t len = strlen(input_name);
+    for (size_t i = 0; i < len; i++) {
+        if (input_name[i] == '/') {
+            output_name[i] = '_';
+        } else {
+            output_name[i] = input_name[i];
+        }
+    }
+    output_name[len] = '\0';  // Null-terminate the string
+}
+
+ClassFileStream* ClassLoader::load_embedded_class(Symbol* name) {
+    const char* class_name = name ->as_C_string();
+char normalized_name[256];  // Buffer for normalized name
+    normalize_class_name(class_name, normalized_name);
+
+fprintf(stderr, "[JVDBG] ClassLoader::load_embedded_class for %s\n", class_name);
+for (unsigned int i = 0; i < embedded_classes_count; i++) {
+        if (strcmp(embedded_classes[i].class_name, normalized_name) == 0) {
+fprintf(stderr, "GOT IT!\n");
+           EmbeddedClassData ecd = embedded_classes[i];
+    return new ClassFileStream(ecd.bytecode, ecd.length, ecd.class_name);
+
+        }
+}
+return nullptr;
+/*
+    // const unsigned char classbytes[12] = {0xCA, 0xFE, 0xBA, 0xBE,  0x00, 0x00, 0x00, 0x44, 0x00, 0x7b, 0x07, 0x00};
+    const char* class_name = name ->as_C_string();
+    const char* source_name = class_name;
+    return new ClassFileStream(bc_java_lang_object, 2445, source_name);
+*/
+}
+
 // Called by the boot classloader to load classes
 InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bool search_append_only, TRAPS) {
   assert(name != nullptr, "invariant");
+fprintf(stderr, "[JVDBG] ClassLoader::load_class asked\n");
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
@@ -1171,15 +1233,43 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   const char* const class_name = name->as_C_string();
 
   EventMarkClassLoading m("Loading class %s", class_name);
+fprintf(stderr, "[JVDBG] ClassLoader::load_class named %s\n", class_name);
 
   const char* const file_name = file_name_for_class_name(class_name,
                                                          name->utf8_length());
+fprintf(stderr, "[JVDBG] ClassLoader::load_class at loc %s\n", file_name);
   assert(file_name != nullptr, "invariant");
 
   // Lookup stream for parsing .class file
   ClassFileStream* stream = nullptr;
   s2 classpath_index = 0;
   ClassPathEntry* e = nullptr;
+
+fprintf(stderr, "[JVDBG] here we need the stream\n");
+    stream = load_embedded_class(name);
+/*
+    if (stream != nullptr) {
+        ResourceMark rm(THREAD);;
+        HandleMark hm(THREAD);
+
+        ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+        // ClassLoadInfo cl_info;
+
+        InstanceKlass* result = KlassFactory::create_from_stream(
+            stream,          // The bytecode stream from your static image
+            name,               // The name of the class
+            loader_data,              // The associated loader data
+            nullptr,                 // Optional load info (nullptr if not needed)
+            CHECK_NULL                // Error handling mechanism
+        );
+
+        if (result != nullptr) {
+            result->set_classpath_index(0);
+            SystemDictionary::add(k, THREAD);
+            return result;
+        }
+    }
+*/
 
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
@@ -1198,7 +1288,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   // found within its module specification, the search should continue to Load Attempt #2.
   // Note: The --patch-module entries are never searched if the boot loader's
   //       visibility boundary is limited to only searching the append entries.
-  if (_patch_mod_entries != nullptr && !search_append_only) {
+  if ((nullptr == stream) && _patch_mod_entries != nullptr && !search_append_only) {
     assert(!CDSConfig::is_dumping_archive(), "CDS doesn't support --patch-module during dumping");
     stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
   }
@@ -1433,6 +1523,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 // it can be appended to and is by jvmti.
 
 void ClassLoader::initialize(TRAPS) {
+fprintf(stderr, "[JVDBG] CLASSLOADER INITIALIZE\n\n\n\n");
   if (UsePerfData) {
     // jvmstat performance counters
     NEWPERFTICKCOUNTER(_perf_accumulated_time, SUN_CLS, "time");
@@ -1496,6 +1587,8 @@ static char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, 
 
 // Lookup VM options embedded in the modules jimage file
 char* ClassLoader::lookup_vm_options() {
+// failInApp();
+fprintf(stderr, "LOOKUP_VM_OPTIONS\n");
   jint error;
   char modules_path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -1505,11 +1598,13 @@ char* ClassLoader::lookup_vm_options() {
 
   jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
   JImage_file =(*JImageOpen)(modules_path, &error);
+fprintf(stderr, "JIMAGEFILE = %p\n", JImage_file);
   if (JImage_file == nullptr) {
     return nullptr;
   }
 
   const char *jimage_version = get_jimage_version_string();
+fprintf(stderr, "jimageversion = %s\n", jimage_version);
   char *options = lookup_vm_resource(JImage_file, jimage_version, "jdk/internal/vm/options");
   return options;
 }
@@ -1612,7 +1707,9 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
 
   // Create the ModuleEntry for java.base (must occur after setup_patch_mod_entries
   // to successfully determine if java.base has been patched)
+fprintf(stderr, "ClassLoader init2a\n");
   create_javabase();
+fprintf(stderr, "ClassLoader init2b\n");
 
   // Setup the initial java.base/path pair for the exploded build entries.
   // As more modules are defined during module system initialization, more
@@ -1636,11 +1733,17 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
   char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
   ResourceMark rm(thread);
   // os::native_path writes into orig_copy
+fprintf(stderr, "[JVDBG] CL gcp, orig = %s\n", orig);
   char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(orig)+1);
+fprintf(stderr, "[JVDBG] CL gcp, origcopy = %s\n", orig_copy);
   strcpy(orig_copy, orig);
+fprintf(stderr, "[JVDBG] CL CE = %p\n", CanonicalizeEntry);
+fprintf(stderr, "[JVDBG] CL gcp1\n");
   if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
+fprintf(stderr, "[JVDBG] CL gcp2\n");
     return nullptr;
   }
+fprintf(stderr, "[JVDBG] CL gcp3\n");
   return canonical_path;
 }
 

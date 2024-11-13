@@ -48,18 +48,24 @@ ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = nullptr;
 jlong            ReferenceProcessor::_soft_ref_timestamp_clock = 0;
 
 void referenceProcessor_init() {
+  fprintf(stderr, "[JVDBG] referenceprocessor init\n");
   ReferenceProcessor::init_statics();
+  fprintf(stderr, "[JVDBG] referenceprocessor init done\n");
 }
 
 void ReferenceProcessor::init_statics() {
   // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
+  fprintf(stderr, "[JVDBG] referenceprocessor initstats 1\n");
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  fprintf(stderr, "[JVDBG] referenceprocessor initstats 2\n");
 
   // Initialize the soft ref timestamp clock.
   _soft_ref_timestamp_clock = now;
   // Also update the soft ref clock in j.l.r.SoftReference
+  fprintf(stderr, "[JVDBG] referenceprocessor initstats 3\n");
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
+  fprintf(stderr, "[JVDBG] referenceprocessor initstats 4\n");
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
   if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {

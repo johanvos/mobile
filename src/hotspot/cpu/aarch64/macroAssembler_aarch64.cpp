@@ -5069,34 +5069,48 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
+fprintf(stderr, "[JVDBG] MA klass_decode_mode, uccp = %p\n", UseCompressedClassPointers);
+fprintf(stderr, "[JVDBG] MA msi? %p\n", Metaspace::initialized());
   assert(UseCompressedClassPointers, "not using compressed class pointers");
   assert(Metaspace::initialized(), "metaspace not initialized yet");
 
+fprintf(stderr, "[JVDBG] MA kdm 1\n");
   if (_klass_decode_mode != KlassDecodeNone) {
     return _klass_decode_mode;
   }
+fprintf(stderr, "[JVDBG] MA kdm 2\n");
 
   assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift()
          || 0 == CompressedKlassPointers::shift(), "decode alg wrong");
+fprintf(stderr, "[JVDBG] MA kdm 3\n");
 
   if (CompressedKlassPointers::base() == nullptr) {
     return (_klass_decode_mode = KlassDecodeZero);
   }
+fprintf(stderr, "[JVDBG] MA kdm 4\n");
 
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
+fprintf(stderr, "[JVDBG] MA kdm 5\n");
     const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
     const uint64_t range_mask = (1ULL << log2i(range)) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
+fprintf(stderr, "[JVDBG] MA kdm 6\n");
       return (_klass_decode_mode = KlassDecodeXor);
     }
   }
+fprintf(stderr, "[JVDBG] MA kdm 7\n");
 
+fprintf(stderr, "[JVDBG] MA kdm 7a, sb = %ld\n", (uint64_t)CompressedKlassPointers::base());
+fprintf(stderr, "[JVDBG] MA kdm 7b, sb = %ld\n", CompressedKlassPointers::shift());
   const uint64_t shifted_base =
     (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+fprintf(stderr, "[JVDBG] MA kdm 8, sb = %ld\n", shifted_base);
+fprintf(stderr, "[JVDBG] MA kdm 8b, sb = %ld\n", (shifted_base & 0xffff0000ffffffff));
   guarantee((shifted_base & 0xffff0000ffffffff) == 0,
             "compressed class base bad alignment");
 
+fprintf(stderr, "[JVDBG] MA kdm 9\n");
   return (_klass_decode_mode = KlassDecodeMovk);
 }
 

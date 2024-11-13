@@ -1997,6 +1997,7 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& fep,
                                                          address& dep,
                                                          address& vep) {
+fprintf(stderr, "[JVDBG] set_vtos_entry_points\n");
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
   aep = __ pc();     // atos entry point

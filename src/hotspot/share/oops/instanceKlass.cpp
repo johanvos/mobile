@@ -3842,11 +3842,13 @@ void InstanceKlass::print_class_load_cause_logging() const {
     ResourceMark rm(current);
     const char* name = external_name();
 
+#ifdef NOLOGGING
     if (LogClassLoadingCauseFor == nullptr ||
         (strcmp("*", LogClassLoadingCauseFor) != 0 &&
          strstr(name, LogClassLoadingCauseFor) == nullptr)) {
         return;
     }
+#endif
 
     // Log Java stack first
     {

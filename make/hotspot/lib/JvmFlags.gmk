@@ -49,6 +49,7 @@ JVM_CFLAGS_INCLUDES += \
     -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
     -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
     -I$(TOPDIR)/src/java.base/share/native/libjimage \
+    -I$(TOPDIR)/src/java.base/share/native/libzip \
     #
 
 ifeq ($(call isTargetOs, android ios), true)

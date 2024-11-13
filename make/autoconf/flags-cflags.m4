@@ -696,8 +696,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       -D$FLAGS_CPU_LEGACY"
 
   if test "x$FLAGS_CPU_BITS" = x64; then
-    $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
-    $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
+    if test "x$OPENJDK_TARGET_OS" = xios; then
+      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
+      $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
+    else
+      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
+      $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
+    fi
   fi
 
   # toolchain dependent, per-cpu

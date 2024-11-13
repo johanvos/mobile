@@ -57,15 +57,21 @@ void TemplateInterpreter::initialize_stub() {
 }
 
 void TemplateInterpreter::initialize_code() {
+fprintf(stderr, "[JVDBG] ti, initialize code 1\n");
   AbstractInterpreter::initialize();
+fprintf(stderr, "[JVDBG] ti, initialize code 2\n");
 
   TemplateTable::initialize();
+fprintf(stderr, "[JVDBG] ti, initialize code 3\n");
 
   // generate interpreter
   { ResourceMark rm;
+fprintf(stderr, "[JVDBG] ti, initialize code 4\n");
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
     TemplateInterpreterGenerator g;
+fprintf(stderr, "[JVDBG] ti, initialize code 5\n");
     // Free the unused memory not occupied by the interpreter and the stubs
+fprintf(stderr, "[JVDBG] ti, initialize code 6\n");
     _code->deallocate_unused_tail();
   }
 

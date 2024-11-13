@@ -1108,6 +1108,7 @@ void TemplateTable::dastore() {
 }
 
 void TemplateTable::aastore() {
+fprintf(stderr, "[JVDBG] tt_aarch64 aastore\n");
   Label is_null, ok_is_subtype, done;
   transition(vtos, vtos);
   // stack: ..., array, index, value

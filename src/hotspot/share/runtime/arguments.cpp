@@ -1942,6 +1942,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
                                    const JavaVMInitArgs *java_options_args,
                                    const JavaVMInitArgs *cmd_line_args) {
   bool patch_mod_javabase = false;
+failInApp();
 
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
@@ -2139,6 +2140,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   const char* tail;
 
   // iterate over arguments
+fprintf(stderr, "[JVDBG] parseEachVmInitArg, size = %d\n", args->nOptions);
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
 

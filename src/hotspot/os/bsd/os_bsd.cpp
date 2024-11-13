@@ -883,7 +883,7 @@ static int local_dladdr(const void* addr, Dl_info* info) {
   }
 #endif
   int answer = dladdr(addr, info);
-fprintf(stderr, "result of dladdr = %s\n", info->dli_fname);
+// fprintf(stderr, "result of dladdr = %s\n", info->dli_fname);
 return answer;
 }
 
@@ -994,7 +994,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   if (local_dladdr((void*)addr, &dlinfo) != 0) {
     if (dlinfo.dli_fname != nullptr) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-fprintf(stderr, "ADD = %s\n", buf);
+// fprintf(stderr, "ADD = %s\n", buf);
     }
     if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
@@ -1500,10 +1500,10 @@ void os::jvm_path(char *buf, jint buflen) {
   // Lazy resolve the path to current module.
   if (saved_jvm_path[0] != 0) {
     strcpy(buf, saved_jvm_path);
-fprintf(stderr, "BUFFFF1 = %s\n", buf);
+// fprintf(stderr, "BUFFFF1 = %s\n", buf);
     return;
   }
-fprintf(stderr, "BUFFFF2 = %s\n", buf);
+// fprintf(stderr, "BUFFFF2 = %s\n", buf);
 
   char dli_fname[MAXPATHLEN];
   dli_fname[0] = '\0';
@@ -1515,9 +1515,9 @@ fprintf(stderr, "BUFFFF2 = %s\n", buf);
   if (ret && dli_fname[0] != '\0') {
     rp = os::realpath(dli_fname, buf, buflen);
   }
-fprintf(stderr, "BUFFFF3 = %s\n", buf);
+// fprintf(stderr, "BUFFFF3 = %s\n", buf);
   if (rp == nullptr) {
-fprintf(stderr, "BUFFFF4 = %s\n", buf);
+// fprintf(stderr, "BUFFFF4 = %s\n", buf);
     return;
   }
 
@@ -1549,10 +1549,10 @@ fprintf(stderr, "BUFFFF4 = %s\n", buf);
 
         rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
-fprintf(stderr, "BUFFFF5 = %s\n", buf);
+// fprintf(stderr, "BUFFFF5 = %s\n", buf);
           return;
         }
-fprintf(stderr, "BUFFFF6 = %s\n", buf);
+// fprintf(stderr, "BUFFFF6 = %s\n", buf);
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
@@ -1573,7 +1573,7 @@ fprintf(stderr, "BUFFFF6 = %s\n", buf);
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }
-fprintf(stderr, "BUFFFF = %s\n", buf);
+// fprintf(stderr, "BUFFFF = %s\n", buf);
 
         // If the path exists within JAVA_HOME, add the JVM library name
         // to complete the path to JVM being overridden.  Otherwise fallback
@@ -1809,7 +1809,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
       MACOS_ONLY(| (exec ? MAP_JIT : 0));
   const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
       MACOS_ONLY(| (0));
-  fprintf(stderr, "flags = %d and not %d\n", flags, rflags);
+  // fprintf(stderr, "flags = %d and not %d\n", flags, rflags);
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
@@ -1837,7 +1837,7 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
-fprintf(stderr, "[BSD] resmem, size = %d and exec = %d\n", bytes, exec);
+fprintf(stderr, "[BSD] resmem, size = %zu and exec = %d\n", bytes, exec);
   char* answer = anon_mmap(nullptr /* addr */, bytes, exec);
 fprintf(stderr, "[BSD] resmem, answer = %p\n", answer);
   return answer;

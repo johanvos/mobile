@@ -50,6 +50,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
+extern void failInApp();
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
 
@@ -331,11 +332,13 @@ void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArgu
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
 
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked\n");
   JavaThread* thread = THREAD;
   assert(method.not_null(), "must have a method to call");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
 
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 2\n");
   // Verify the arguments
   if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
     args->verify(method, result->get_type());
@@ -345,7 +348,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     assert(result->get_type() == T_VOID, "an empty method must return a void value");
     return;
   }
-
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 3\n");
+#define ASSERT
 #ifdef ASSERT
   { InstanceKlass* holder = method->method_holder();
     // A klass might not be initialized since JavaCall's might be used during the executing of
@@ -365,6 +369,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 4\n");
   // When we reenter Java, we need to re-enable the reserved/yellow zone which
   // might already be disabled when we are in VM.
   thread->stack_overflow_state()->reguard_stack_if_needed();
@@ -382,9 +387,12 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     os::map_stack_shadow_pages(sp);
   }
 
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 5\n");
   // do call
   { JavaCallWrapper link(method, receiver, result, CHECK);
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 6\n");
     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 7\n");
 
       // NOTE: if we move the computation of the result_val_address inside
       // the call to call_stub, the optimizer produces wrong code.
@@ -393,15 +401,18 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
       address entry_point;
       {
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 8\n");
         // The enter_interp_only_mode use handshake to set interp_only mode
         // so no safepoint should be allowed between is_interp_only_mode() and call
         NoSafepointVerifier nsv;
         if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
           entry_point = method->interpreter_entry();
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 9\n");
         } else {
           // Since the call stub sets up like the interpreter we call the from_interpreted_entry
           // so we can go compiled via a i2c.
           entry_point = method->from_interpreted_entry();
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 10a, shuold be %p\n", entry_point);
 #if INCLUDE_JVMCI
           // Gets the alternative target (if any) that should be called
           Handle alternative_target = args->alternative_target();
@@ -418,6 +429,9 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 #endif
         }
       }
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 11, address = %p and entry_point = %p\n", &link, entry_point);
+failInApp();
+// fprintf(stderr, "[DEBUG] Before call_stub, SP: %p\n", __builtin_frame_address(0));
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
@@ -430,13 +444,16 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
         CHECK
       );
 
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 12\n");
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points
+fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 13\n");
       if (oop_result_flag) {
         thread->set_vm_result(result->get_oop());
       }
     }
   } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
+fprintf(stderr, "[JVDBG] exit JCW\n");
 
   // Check if a thread stop or suspend should be executed
   // The following assert was not realistic.  Thread.stop can set that bit at any moment.

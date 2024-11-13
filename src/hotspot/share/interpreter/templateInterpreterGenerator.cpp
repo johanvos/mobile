@@ -35,9 +35,12 @@
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 TemplateInterpreterGenerator::TemplateInterpreterGenerator(): AbstractInterpreterGenerator() {
+fprintf(stderr, "[JVDBG] TIG1\n");
   _unimplemented_bytecode    = nullptr;
   _illegal_bytecode_sequence = nullptr;
+fprintf(stderr, "[JVDBG] TIG2\n");
   generate_all();
+fprintf(stderr, "[JVDBG] TIG3\n");
 }
 
 static const BasicType types[Interpreter::number_of_result_handlers] = {
@@ -239,7 +242,9 @@ void TemplateInterpreterGenerator::generate_all() {
 #undef native_method_entry
 
   // Bytecodes
+fprintf(stderr, "[JVDBG] SEP all bytes\n");
   set_entry_points_for_all_bytes();
+fprintf(stderr, "[JVDBG] SEP all bytes done\n");
 
   // installation of code in other places in the runtime
   // (ExcutableCodeManager calls not needed to copy the entries)
@@ -278,12 +283,18 @@ address TemplateInterpreterGenerator::generate_error_exit(const char* msg) {
 //------------------------------------------------------------------------------------------------------------------------
 
 void TemplateInterpreterGenerator::set_entry_points_for_all_bytes() {
+fprintf(stderr, "[JVDBG] SEP all bytes0, len =%d \n", DispatchTable::length);
   for (int i = 0; i < DispatchTable::length; i++) {
     Bytecodes::Code code = (Bytecodes::Code)i;
+fprintf(stderr, "[JVDBG] SEP for %d: %d\n", i, code);
     if (Bytecodes::is_defined(code)) {
+fprintf(stderr, "[JVDBG] SEP defined!\n");
       set_entry_points(code);
+fprintf(stderr, "[JVDBG] SEP defined and set!\n");
     } else {
+fprintf(stderr, "[JVDBG] SEP undefined!\n");
       set_unimplemented(i);
+fprintf(stderr, "[JVDBG] SEP undefined and set!\n");
     }
   }
 }
@@ -324,13 +335,17 @@ void TemplateInterpreterGenerator::set_entry_points(Bytecodes::Code code) {
   // code for short & wide version of bytecode
   if (Bytecodes::is_defined(code)) {
     Template* t = TemplateTable::template_for(code);
+fprintf(stderr, "[JVDBG] defined bc, t= %p valid? %d \n",t, t->is_valid());
     assert(t->is_valid(), "just checking");
     set_short_entry_points(t, bep, cep, sep, aep, iep, lep, fep, dep, vep);
+fprintf(stderr, "[JVDBG] defined bc done\n");
   }
   if (Bytecodes::wide_is_defined(code)) {
     Template* t = TemplateTable::template_for_wide(code);
+fprintf(stderr, "[JVDBG] widedefined bc, t = %p\n", t);
     assert(t->is_valid(), "just checking");
     set_wide_entry_point(t, wep);
+fprintf(stderr, "[JVDBG] widedefined bc done\n");
   }
   // set entry points
   EntryPoint entry(bep, zep, cep, sep, aep, iep, lep, fep, dep, vep);

@@ -589,11 +589,15 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   NOT_ZERO(result =
       (char*) CompressedKlassPointers::reserve_address_space_for_compressed_classes(size, RandomizeClassSpaceLocation,
                                                                                     optimize_for_zero_base));
+fprintf(stderr, "[JVDBG] rasfcwith3argas returns %p\n", result);
 
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+fprintf(stderr, "[JVDBG] mra = %ld\n",  Metaspace::reserve_alignment());
+ size_t la = 16 * G;
+    // result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+     result = os::reserve_memory_aligned(size, la, false);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -710,6 +714,7 @@ void Metaspace::global_initialize() {
   //    it will be placed anywhere.
 
 #if INCLUDE_CDS
+fprintf(stderr, "[JVDBG] vmpsCDS\n");
   // case (a)
   if (CDSConfig::is_using_archive()) {
     if (!FLAG_IS_DEFAULT(CompressedClassSpaceBaseAddress)) {
@@ -719,11 +724,15 @@ void Metaspace::global_initialize() {
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
+#else
+fprintf(stderr, "[JVDBG] vmpsNOCDS\n");
 #endif // INCLUDE_CDS
 
 #ifdef _LP64
 
+fprintf(stderr, "[JVDBG] vmps1\n");
   if (using_class_space() && !class_space_is_initialized()) {
+fprintf(stderr, "[JVDBG] vmps2, ccsba = %p\n", CompressedClassSpaceSize);
     assert(!CDSConfig::is_using_archive(), "CDS archive is not mapped at this point");
 
     // case (b) (No CDS)
@@ -735,6 +744,7 @@ void Metaspace::global_initialize() {
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
+fprintf(stderr, "[JVDBG] vmps3\n");
       const address base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
@@ -742,6 +752,7 @@ void Metaspace::global_initialize() {
                     "(must be aligned to " SIZE_FORMAT_X ").",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
+fprintf(stderr, "[JVDBG] vm_page_size = %p\n", os::vm_page_size());
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
                          os::vm_page_size() /* large */, (char*)base);
       if (rs.is_reserved()) {
@@ -757,11 +768,14 @@ void Metaspace::global_initialize() {
                 CompressedClassSpaceBaseAddress));
       }
     }
+fprintf(stderr, "[JVDBG] vmps4\n");
 
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
+fprintf(stderr, "[JVDBG] vmps5\n");
       log_info(metaspace)("Reserving compressed class space anywhere");
       rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
+fprintf(stderr, "[JVDBG] vmps5b, rs = %p\n", (address)rs.base());
     }
 
     // ...failing that, give up.
@@ -778,6 +792,7 @@ void Metaspace::global_initialize() {
     Metaspace::initialize_class_space(rs);
 
     // Set up compressed class pointer encoding.
+fprintf(stderr, "[JVDBG] invoke set ckp now, initialize to %p\n", (address)rs.base());
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
   }
 

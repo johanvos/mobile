@@ -1079,11 +1079,13 @@ int os::stat(const char *path, struct stat *sbuf) {
 fprintf(stderr, "stat asked for %s\n", path);
   int answer = ::stat(path, sbuf);
 fprintf(stderr, "stat asked for %s returns %d\n", path, answer);
-if (answer == -1) failInApp();
+// if (answer == -1) failInApp();
   return answer;
 }
 
 char * os::native_path(char *path) {
+fprintf(stderr, "[JDBG] need native_path for %s\n", path);
+// failInApp();
   return path;
 }
 

@@ -912,7 +912,12 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
 JNIEXPORT jzfile *
 ZIP_Open(const char *name, char **pmsg)
 {
+fprintf(stderr, "[JVDBG] zip zip_open called for %s\n", name);
     jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
+fprintf(stderr, "[JVDBG] zip zip_open called for %s with msg = %p\n", name, *pmsg);
+if (*pmsg!= NULL) {
+fprintf(stderr, "[JVDBG] errmsg = %s\n", *pmsg);
+}
     return file;
 }
 

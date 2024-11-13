@@ -159,10 +159,15 @@ jint init_globals() {
 }
 
 jint init_globals2() {
+fprintf(stderr, "[JVDBG] init 2, part 1\n");
   universe2_init();          // dependent on codeCache_init and initial_stubs_init
+fprintf(stderr, "[JVDBG] init 2, part 2\n");
   javaClasses_init();        // must happen after vtable initialization, before referenceProcessor_init
+fprintf(stderr, "[JVDBG] init 2, part 3\n");
   interpreter_init_code();   // after javaClasses_init and before any method gets linked
+fprintf(stderr, "[JVDBG] init 2, part 4\n");
   referenceProcessor_init();
+fprintf(stderr, "[JVDBG] init 2, part 5\n");
   jni_handles_init();
 #if INCLUDE_VM_STRUCTS
   vmStructs_init();

@@ -139,7 +139,9 @@ void interpreter_init_stub() {
 }
 
 void interpreter_init_code() {
+fprintf(stderr, "[JVDBG] intinit 1\n");
   Interpreter::initialize_code();
+fprintf(stderr, "[JVDBG] intinit 2\n");
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
   Forte::register_stub(

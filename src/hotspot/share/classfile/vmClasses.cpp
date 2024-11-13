@@ -118,7 +118,9 @@ void vmClasses::resolve_all(TRAPS) {
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
   // first do Object, then String, Class
+ fprintf(stderr, "vmclass, resolve object\n");
   resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
+fprintf(stderr, "vmclass, resolved object\n");
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {

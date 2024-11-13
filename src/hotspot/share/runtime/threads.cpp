@@ -119,6 +119,7 @@ void universe_post_module_init();  // must happen after call_initPhase2
 
 
 static void initialize_class(Symbol* class_name, TRAPS) {
+fprintf(stderr, "[JVDBG] threads.initialzie_class, name = s\n", class_name->as_C_string());
   Klass* klass = SystemDictionary::resolve_or_fail(class_name, true, CHECK);
   InstanceKlass::cast(klass)->initialize(CHECK);
 }
@@ -410,7 +411,7 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
 }
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
-fprintf(stderr, "init threads\n");
+fprintf(stderr, "[JVDBG] threads.cpp create_vm 1\n");
   extern void JDK_Version_init();
 
   // Preinitialize version info.
@@ -433,7 +434,7 @@ fprintf(stderr, "init threads\n");
 
   fprintf(stderr, "Now ask to enable wx\n");
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
-  fprintf(stderr, "Did ask to enable wx\n");
+  fprintf(stderr, "Did ask to enable wx (or not)\n");
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -552,7 +553,9 @@ fprintf(stderr, "init threads\n");
   ObjectSynchronizer::initialize();
 
   // Initialize global modules
+fprintf(stderr, "[JVDBG] threads.cpp init_globals\n");
   jint status = init_globals();
+fprintf(stderr, "[JVDBG] threads.cpp init_globals has status %d\n", status);
   if (status != JNI_OK) {
     main_thread->smr_delete();
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
@@ -571,7 +574,9 @@ fprintf(stderr, "init threads\n");
     Threads::add(main_thread);
   }
 
+fprintf(stderr, "[JVDBG] threads.cpp init_globals2\n");
   status = init_globals2();
+fprintf(stderr, "[JVDBG] threads.cpp init_globals2 has status %d\n", status);
   if (status != JNI_OK) {
     Threads::remove(main_thread, false);
     // It is possible that we managed to fully initialize Universe but have then
@@ -645,7 +650,9 @@ fprintf(stderr, "init threads\n");
     JvmtiAgentList::load_xrun_agents();
   }
 
+fprintf(stderr, "[JVDBG] init java_lang_classes\n");
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
+fprintf(stderr, "[JVDBG] init java_lang_classes done\n");
 
   quicken_jni_functions();
 

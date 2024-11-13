@@ -332,6 +332,7 @@ static void handle_resolution_exception(Symbol* class_name, bool throw_error, TR
 
 Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain,
                                          bool throw_error, TRAPS) {
+fprintf(stderr, "[JVDBG] sysdic, resolve_or_fail for %p\n", class_name);
   Klass* klass = resolve_or_null(class_name, class_loader, protection_domain, THREAD);
   // Check for pending exception or null klass, and throw exception
   if (HAS_PENDING_EXCEPTION || klass == nullptr) {
@@ -590,6 +591,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                                 Handle protection_domain,
                                                                 TRAPS) {
   // name must be in the form of "java/lang/Object" -- cannot be "Ljava/lang/Object;"
+fprintf(stderr, "[JVDBG] sysdic resolveClass %p = %s\n",name, name == nullptr ? "nullptr" : name->as_C_string());
   DEBUG_ONLY(ResourceMark rm(THREAD));
   assert(name != nullptr && !Signature::is_array(name) &&
          !Signature::has_envelope(name), "invalid class name: %s", name == nullptr ? "nullptr" : name->as_C_string());
@@ -609,6 +611,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // All subsequent calls use find_class, and set loaded_class so that
   // before we return a result, we call out to java to check for valid protection domain.
   InstanceKlass* probe = dictionary->find(THREAD, name, protection_domain);
+fprintf(stderr, "[JVDBG] sysdic step 1, probe = %p\n", probe);
   if (probe != nullptr) return probe;
 
   // Non-bootstrap class loaders will call out to class loader and
@@ -636,6 +639,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
     InstanceKlass* check = dictionary->find_class(THREAD, name);
+fprintf(stderr, "[JVDBG] sysdic, return of find_class = %p\n", check);
     if (check != nullptr) {
       // InstanceKlass is already loaded, but we still need to check protection domain below.
       loaded_class = check;
@@ -716,6 +720,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     if (loaded_class == nullptr) {
       // Do actual loading
       loaded_class = load_instance_class(name, class_loader, THREAD);
+fprintf(stderr, "[JVDBG] sysdic loaded_instance_class called, now class = %p\n");
     }
 
     if (load_placeholder_added) {
@@ -1220,7 +1225,9 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
 
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 
+fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl for %p and loader = %p\n", class_name, class_loader);
   if (class_loader.is_null()) {
+fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is null\n");
     ResourceMark rm(THREAD);
     PackageEntry* pkg_entry = nullptr;
     bool search_only_bootloader_append = false;
@@ -1301,6 +1308,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
       // Use VM class loader
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
       k = ClassLoader::load_class(class_name, pkg_entry, search_only_bootloader_append, CHECK_NULL);
+fprintf(stderr, "[JVDBG] did CL::load_class and got %p\n", k);
     }
 
     // find_or_define_instance_class may return a different InstanceKlass
@@ -1310,6 +1318,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     }
     return k;
   } else {
+fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is NOT null\n");
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
     ResourceMark rm(THREAD);
 

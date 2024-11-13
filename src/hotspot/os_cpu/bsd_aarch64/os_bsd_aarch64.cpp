@@ -509,8 +509,8 @@ void os::current_thread_enable_wx(WXMode mode) {
 #ifndef __IOS__
   pthread_jit_write_protect_np(mode == WXExec);
 #else 
-  fprintf(stderr, "NO SUPPORT FOR pthread_jit_write_protect_np on iOS\n");
-  // failInApp();
+  failInApp();
+  // pthread_jit_write_protect_np(mode == WXExec);
 #endif
 }
 

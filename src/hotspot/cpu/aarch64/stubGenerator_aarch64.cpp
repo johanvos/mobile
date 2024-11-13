@@ -77,6 +77,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+extern void failInApp();
+
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -196,12 +198,17 @@ class StubGenerator: public StubCodeGenerator {
   };
 
   address generate_call_stub(address& return_address) {
+fprintf(stderr, "[JVDBG] GENERATE_CALL_STUB1\n");
     assert((int)frame::entry_frame_after_call_words == -(int)sp_after_call_off + 1 &&
            (int)frame::entry_frame_call_wrapper_offset == (int)call_wrapper_off,
            "adjust this code");
 
     StubCodeMark mark(this, "StubRoutines", "call_stub");
     address start = __ pc();
+
+    // __ mov(rscratch1, sp);
+    // __ mov(r0, rscratch1);
+    // __ call_VM_leaf(CAST_FROM_FN_PTR(address, jio_fprintf), r0);
 
     const Address sp_after_call (rfp, sp_after_call_off * wordSize);
 
@@ -231,6 +238,11 @@ class StubGenerator: public StubCodeGenerator {
     address aarch64_entry = __ pc();
 
     // set up frame and move sp to end of save area
+if (1 <2) {
+fprintf(stderr, "start = %p and aarch64_entry = %p\n", start, aarch64_entry);
+  return start;
+}
+    __ mov(r25, r24);
     __ enter();
     __ sub(sp, rfp, -sp_after_call_off * wordSize);
 
@@ -320,6 +332,7 @@ class StubGenerator: public StubCodeGenerator {
     // save current address for use by exception handling code
 
     return_address = __ pc();
+fprintf(stderr, "[JVDBG] GENERATE_CALL_STUB2\n");
 
     // store result depending on type (everything that is not
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
@@ -402,6 +415,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(is_double);
     __ strd(j_farg0, Address(j_rarg2, 0));
     __ br(Assembler::AL, exit);
+fprintf(stderr, "[JVDBG] GENERATE_CALL_STUB3, will return %p\n", start);
 
     return start;
   }
@@ -421,6 +435,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_catch_exception() {
     StubCodeMark mark(this, "StubRoutines", "catch_exception");
     address start = __ pc();
+if (1 < 2) {return start;}
 
     // same as in generate_call_stub():
     const Address sp_after_call(rfp, sp_after_call_off * wordSize);
@@ -8171,6 +8186,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Initialization
   void generate_initial_stubs() {
+fprintf(stderr, "Generate initial stubs!\n");
+failInApp();
     // Generate initial stubs and initializes the entry points
 
     // entry points that exist in all platforms Note: This is code
@@ -8183,6 +8200,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::_call_stub_entry =
       generate_call_stub(StubRoutines::_call_stub_return_address);
+fprintf(stderr, "Generated call_stub_entry: %p\n", StubRoutines::_call_stub_entry);
 
     // is referenced by megamorphic call
     StubRoutines::_catch_exception_entry = generate_catch_exception();

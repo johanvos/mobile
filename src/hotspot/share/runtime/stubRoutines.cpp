@@ -254,6 +254,9 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+  fprintf(stderr, "%s\t [" INTPTR_FORMAT ", " INTPTR_FORMAT "] used: %d, free: %d",
+                buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
+                buffer.total_content_size(), buffer.insts_remaining());
   return stubs_code;
 }
 

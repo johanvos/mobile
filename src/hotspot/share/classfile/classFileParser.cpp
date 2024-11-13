@@ -166,6 +166,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
                                                   TRAPS) {
   assert(stream != nullptr, "invariant");
   assert(cp != nullptr, "invariant");
+fprintf(stderr, "[JVDBG] CFP, parse constantpool, len = %d\n", length);
 
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
   // this function (_current can be allocated in a register, with scalar
@@ -186,6 +187,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
 
   // parsing  Index 0 is unused
   for (int index = 1; index < length; index++) {
+// fprintf(stderr, "[JVDBG] CFP, idx = %d\n",index);
     // Each of the following case guarantees one more byte in the stream
     // for the following tag or the access_flags following constant pool,
     // so we don't need bounds-check for reading tag.
@@ -5486,6 +5488,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   // Version numbers
   _minor_version = stream->get_u2_fast();
   _major_version = stream->get_u2_fast();
+fprintf(stderr, "major = %d, minor = %d\n", _major_version, _minor_version);
 
   // Check version numbers - we check this even with verifier off
   verify_class_version(_major_version, _minor_version, _class_name, CHECK);
