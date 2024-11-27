@@ -392,6 +392,7 @@ void Arguments::init_system_properties() {
   //    - -Xbootclasspath/a:
   //    - AddToBootstrapClassLoaderSearch during JVMTI OnLoad phase
   _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", nullptr, false, true);
+fprintf(stderr, "[JVDBG] ADD _java_home etc to init properties\n");
 
   // Add to System Property list.
   PropertyList_add(&_system_properties, _sun_boot_library_path);
@@ -403,6 +404,7 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+fprintf(stderr, "[JVDBG] ADD _java_home etc to init properties done \n");
 }
 
 // Update/Initialize System properties after JDK version number is known

@@ -316,6 +316,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
 
 int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
+fprintf(stderr, "[ZERO] native_entry called\n");
   assert(method->is_native() && !method->is_abstract(), "should be");
 
   JavaThread *thread = THREAD;

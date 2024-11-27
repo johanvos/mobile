@@ -411,6 +411,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   if (_to_java_string_fn == nullptr) {
     void *lib_handle = os::native_java_library();
+fprintf(stderr, "need to print platformdependentstring, lib_handle = %p\n", lib_handle);
     _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "JNU_NewStringPlatform"));
 #if defined(_WIN32) && !defined(_WIN64)
     if (_to_java_string_fn == nullptr) {
@@ -444,6 +445,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
 
   if (_to_platform_string_fn == nullptr) {
     void *lib_handle = os::native_java_library();
+fprintf(stderr, "need to print platformdependentstring, lib_handle = %p\n", lib_handle);
     _to_platform_string_fn = CAST_TO_FN_PTR(to_platform_string_fn_t, os::dll_lookup(lib_handle, "GetStringPlatformChars"));
     if (_to_platform_string_fn == nullptr) {
       fatal("GetStringPlatformChars missing");

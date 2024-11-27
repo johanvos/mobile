@@ -337,15 +337,20 @@ static void call_initPhase3(TRAPS) {
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
+fprintf(stderr, "[THREADS_init] first initialize java_lang_String\n");
   initialize_class(vmSymbols::java_lang_String(), CHECK);
+fprintf(stderr, "[THREADS_init] did initialize java_lang_String\n");
 
   // Inject CompactStrings value after the static initializers for String ran.
   java_lang_String::set_compact_strings(CompactStrings);
 
   // Initialize java_lang.System (needed before creating the thread)
+fprintf(stderr, "[THREADS_init] now initialize java_lang_system\n");
   initialize_class(vmSymbols::java_lang_System(), CHECK);
+fprintf(stderr, "[THREADS_init] now initialize java_lang_class\n");
   // The VM creates & returns objects of this class. Make sure it's initialized.
   initialize_class(vmSymbols::java_lang_Class(), CHECK);
+fprintf(stderr, "[THREADS_init] now initialize java_lang_threadgroup\n");
   initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK);
   Handle thread_group = create_initial_thread_group(CHECK);
   Universe::set_main_thread_group(thread_group());

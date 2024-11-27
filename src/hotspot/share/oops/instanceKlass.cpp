@@ -1602,11 +1602,13 @@ void InstanceKlass::call_class_initializer(TRAPS) {
                 h_method() == nullptr ? "(no method)" : "", p2i(this),
                 THREAD->name());
   }
+fprintf(stderr, "[JavaCalls_clinit for %s, method = %p\n", signature_name(), h_method());
   if (h_method() != nullptr) {
     JavaCallArguments args; // No arguments
     JavaValue result(T_VOID);
     JavaCalls::call(&result, h_method, &args, CHECK); // Static call (no args)
   }
+fprintf(stderr, "[JavaCalls_clinit for %s DONE, method = %p\n", signature_name(), h_method());
 }
 
 

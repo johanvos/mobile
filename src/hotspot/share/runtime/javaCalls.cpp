@@ -338,7 +338,7 @@ fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked\n");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
 
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 2\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 2\n");
   // Verify the arguments
   if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
     args->verify(method, result->get_type());
@@ -348,7 +348,7 @@ fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 2\n");
     assert(result->get_type() == T_VOID, "an empty method must return a void value");
     return;
   }
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 3\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 3\n");
 #define ASSERT
 #ifdef ASSERT
   { InstanceKlass* holder = method->method_holder();
@@ -369,7 +369,7 @@ fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 3\n");
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 4\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 4\n");
   // When we reenter Java, we need to re-enable the reserved/yellow zone which
   // might already be disabled when we are in VM.
   thread->stack_overflow_state()->reguard_stack_if_needed();
@@ -387,12 +387,12 @@ fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 4\n");
     os::map_stack_shadow_pages(sp);
   }
 
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 5\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 5\n");
   // do call
   { JavaCallWrapper link(method, receiver, result, CHECK);
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 6\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 6\n");
     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 7\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 7\n");
 
       // NOTE: if we move the computation of the result_val_address inside
       // the call to call_stub, the optimizer produces wrong code.
@@ -401,7 +401,7 @@ fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 7\n");
 
       address entry_point;
       {
-fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 8\n");
+// fprintf(stderr, "[JVDBG] javaCalls::call_helper invoked 8\n");
         // The enter_interp_only_mode use handshake to set interp_only mode
         // so no safepoint should be allowed between is_interp_only_mode() and call
         NoSafepointVerifier nsv;

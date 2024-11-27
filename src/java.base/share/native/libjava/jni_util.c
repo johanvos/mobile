@@ -728,15 +728,23 @@ newStringUTF8(JNIEnv *env, const char *str)
 JNIEXPORT void
 InitializeEncoding(JNIEnv *env, const char *encname)
 {
+fprintf(stderr, "[JVDBG] initializeEncoding0..\n");
     jclass strClazz = NULL;
+fprintf(stderr, "[JVDBG] initializeEncoding0bis\n");
+jint lc = (*env)->EnsureLocalCapacity(env, 3);
+fprintf(stderr, "[JVDBG] lc = %d\n", lc);
 
     if ((*env)->EnsureLocalCapacity(env, 3) < 0)
         return;
+fprintf(stderr, "[JVDBG] initializeEncoding10\n");
 
     strClazz = JNU_ClassString(env);
+fprintf(stderr, "[JVDBG] initializeEncoding11\n");
     CHECK_NULL(strClazz);
+fprintf(stderr, "[JVDBG] initializeEncoding1\n");
 
     if (encname) {
+fprintf(stderr, "[JVDBG] encname = %s\n", encname);
         /*
          * On Solaris with nl_langinfo() called in GetJavaProperties():
          *
@@ -768,9 +776,11 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             charsetname = encname;
             fastEncoding = NO_FAST_ENCODING;
         }
+fprintf(stderr, "[JVDBG] fastencoding = %d and charsetname = %s\n", fastEncoding, charsetname);
         while (charsetname != NULL) {
             jstring enc = (*env)->NewStringUTF(env, charsetname);
             if (enc == NULL) {
+fprintf(stderr, "[JVDBG] whoops, backfastencoding = %d\n", fastEncoding);
                 fastEncoding = NO_ENCODING_YET;
                 return;
             }
@@ -785,6 +795,7 @@ InitializeEncoding(JNIEnv *env, const char *encname)
                 (*env)->ExceptionClear(env);
             }
             (*env)->DeleteLocalRef(env, enc);
+fprintf(stderr, "[JVDBG] jcharset = %p\n", &charset);
 
             if (!exc && charset.l != NULL) {
                 jnuCharset = (*env)->NewGlobalRef(env, charset.l);
@@ -794,6 +805,7 @@ InitializeEncoding(JNIEnv *env, const char *encname)
                 charsetname = "UTF-8";
                 fastEncoding = FAST_UTF_8;
             } else { // give up
+fprintf(stderr, "whoops back2\n");
                 fastEncoding = NO_ENCODING_YET;
                 return;
             }
@@ -819,6 +831,7 @@ InitializeEncoding(JNIEnv *env, const char *encname)
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str)
 {
+fprintf(stderr, "newstringpc, fastencoding = %d\n", fastEncoding);
     if (fastEncoding == FAST_UTF_8)
         return newStringUTF8(env, str);
     if (fastEncoding == FAST_8859_1)
@@ -828,7 +841,7 @@ JNU_NewStringPlatform(JNIEnv *env, const char *str)
     if (fastEncoding == FAST_CP1252)
         return newStringCp1252(env, str);
     if (fastEncoding == NO_ENCODING_YET) {
-        JNU_ThrowInternalError(env, "platform encoding not initialized");
+        JNU_ThrowInternalError(env, "platform encoding not initialized1");
         return NULL;
     }
     return newStringJava(env, str);
@@ -961,6 +974,7 @@ static const char *
 getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean strict)
 {
 
+fprintf(stderr, "getstringpc, fastencoding = %d\n", fastEncoding);
     if (isCopy)
         *isCopy = JNI_TRUE;
 
@@ -973,7 +987,7 @@ getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean st
     if (fastEncoding == FAST_CP1252)
         return getStringCp1252Chars(env, jstr, strict);
     if (fastEncoding == NO_ENCODING_YET) {
-        JNU_ThrowInternalError(env, "platform encoding not initialized");
+        JNU_ThrowInternalError(env, "platform encoding not initialized2");
         return 0;
     } else
         return getStringBytes(env, jstr, strict);

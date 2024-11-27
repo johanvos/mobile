@@ -323,7 +323,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         }
 #endif
 
-#ifdef MACOSX
+#if defined(MACOSX) || defined(__IOS__)
         /*
          * For the case on MacOS X where encoding is set to US-ASCII, but we
          * don't have any encoding hints from LANG/LC_ALL/LC_CTYPE, use UTF-8

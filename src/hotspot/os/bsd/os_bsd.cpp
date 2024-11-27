@@ -405,6 +405,7 @@ void os::init_system_properties_values() {
         }
       }
     }
+fprintf(stderr, "We will set java_home to %s\n", buf);
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
 failInApp();
@@ -466,7 +467,9 @@ failInApp();
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
+fprintf(stderr, "java_home part 1 is set to %s\n", buf);
 
+#ifndef __IOS__
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
     *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
@@ -486,7 +489,28 @@ failInApp();
         *pslash = '\0';          // Get rid of /lib.
       }
     }
+#endif
     Arguments::set_java_home(buf);
+fprintf(stderr, "java_home is set to %s\n", buf);
+#ifdef __IOS__
+char modules[1024];
+snprintf(modules, sizeof(modules), "%s/modules",buf);
+fprintf(stderr, "trying to create modules dir at %s\n", modules);
+struct stat st;
+if (stat(modules, &st) == 0) {
+  if (S_ISDIR(st.st_mode)) {
+fprintf(stderr, "already exist!\n");
+  } else {
+fprintf(stderr, "link already exist!\n");
+  }
+}
+int mdres = mkdir (modules, 0755);
+if (mdres != 0) {
+fprintf(stderr, "that failed: %s\n", strerror(errno));
+}
+fprintf(stderr, "Result of creating modules = %d\n", mdres);
+#endif
+failInApp();
     if (!set_boot_path('/', ':')) {
 failInApp();
         vm_exit_during_initialization("Failed setting boot class path.", nullptr);
@@ -1500,10 +1524,10 @@ void os::jvm_path(char *buf, jint buflen) {
   // Lazy resolve the path to current module.
   if (saved_jvm_path[0] != 0) {
     strcpy(buf, saved_jvm_path);
-// fprintf(stderr, "BUFFFF1 = %s\n", buf);
+ fprintf(stderr, "BUFFFF1 = %s\n", buf);
     return;
   }
-// fprintf(stderr, "BUFFFF2 = %s\n", buf);
+ fprintf(stderr, "BUFFFF2 = %s\n", buf);
 
   char dli_fname[MAXPATHLEN];
   dli_fname[0] = '\0';
@@ -1512,12 +1536,19 @@ void os::jvm_path(char *buf, jint buflen) {
                                          dli_fname, sizeof(dli_fname), nullptr);
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
+ fprintf(stderr, "BUFFFF2b = %s\n", dli_fname);
+#ifdef __IOS__
+  const char *homeDir = getenv("HOME");
+  fprintf(stderr, "[JVDBG] ios homedir = %s\n", homeDir);
+  snprintf(buf, buflen, "%s", homeDir);
+  return;
+#endif
   if (ret && dli_fname[0] != '\0') {
     rp = os::realpath(dli_fname, buf, buflen);
   }
-// fprintf(stderr, "BUFFFF3 = %s\n", buf);
+ fprintf(stderr, "BUFFFF3 = %s\n", buf);
   if (rp == nullptr) {
-// fprintf(stderr, "BUFFFF4 = %s\n", buf);
+ fprintf(stderr, "BUFFFF4 = %s\n", buf);
     return;
   }
 
@@ -1549,10 +1580,10 @@ void os::jvm_path(char *buf, jint buflen) {
 
         rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
-// fprintf(stderr, "BUFFFF5 = %s\n", buf);
+ fprintf(stderr, "BUFFFF5 = %s\n", buf);
           return;
         }
-// fprintf(stderr, "BUFFFF6 = %s\n", buf);
+ fprintf(stderr, "BUFFFF6 = %s\n", buf);
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
@@ -1573,7 +1604,7 @@ void os::jvm_path(char *buf, jint buflen) {
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }
-// fprintf(stderr, "BUFFFF = %s\n", buf);
+ fprintf(stderr, "BUFFFF7 = %s\n", buf);
 
         // If the path exists within JAVA_HOME, add the JVM library name
         // to complete the path to JVM being overridden.  Otherwise fallback

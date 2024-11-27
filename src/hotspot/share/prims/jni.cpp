@@ -723,6 +723,7 @@ JNI_END
 JNI_LEAF(jint, jni_EnsureLocalCapacity(JNIEnv *env, jint capacity))
   HOTSPOT_JNI_ENSURELOCALCAPACITY_ENTRY(env, capacity);
 
+fprintf(stderr, "[JVDBG] ensureLocaCap asked with capacity = %d and max = %d\n", capacity, MaxJNILocalCapacity);
   jint ret;
   if (capacity >= 0 &&
       ((MaxJNILocalCapacity <= 0) || (capacity <= MaxJNILocalCapacity))) {

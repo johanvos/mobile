@@ -253,6 +253,7 @@ static address lookup_special_native(const char* jni_name) {
 address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS) {
   address entry;
   const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
+fprintf(stderr, "[NativeLookup] lookup_style for pure_name = %s and long_name = %s and jni_jane = %s\n", pure_name, long_name, jni_name);
 
 
   // If the loader is null we have a system class, so we attempt a lookup in
@@ -263,13 +264,16 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   Handle loader(THREAD, method->method_holder()->class_loader());
   if (loader.is_null()) {
     entry = lookup_special_native(jni_name);
+fprintf(stderr, "[NativeLookup] try 1, entry = %p\n", entry);
     if (entry == nullptr) {
        entry = (address) os::dll_lookup(os::native_java_library(), jni_name);
+fprintf(stderr, "[NativeLookup] try 2, entry = %p\n", entry);
     }
     if (entry != nullptr) {
       return entry;
     }
   }
+fprintf(stderr, "[NativeLookup] try 3, entry = %p\n", entry);
 
   // Otherwise call static method findNative in ClassLoader
   Klass*   klass = vmClasses::ClassLoader_klass();
@@ -284,6 +288,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   args.push_oop(java_name_arg);
 
   JavaValue result(T_LONG);
+fprintf(stderr, "[NativeLookup], call_static\n");
   JavaCalls::call_static(&result,
                          klass,
                          vmSymbols::findNative_name(),
@@ -291,6 +296,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
                          &args,
                          CHECK_NULL);
   entry = (address) (intptr_t) result.get_jlong();
+fprintf(stderr, "[NativeLookup] try 4, entry = %p\n", entry);
 
   if (entry == nullptr) {
     // findNative didn't find it, if there are any agent libraries look in them
