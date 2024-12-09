@@ -253,8 +253,8 @@ RequiresSetenv(const char *jvmpath) {
 
     /*
      * Prevent recursions. Since LD_LIBRARY_PATH is the one which will be set by
-     * previous versions of the JRE, thus it is the only path that matters here.
-     * So we check to see if the desired JRE is set.
+     * previous versions of the JDK, thus it is the only path that matters here.
+     * So we check to see if the desired JDK is set.
      */
     JLI_StrNCpy(jpath, jvmpath, PATH_MAX);
     p = JLI_StrRChr(jpath, '/');
@@ -273,9 +273,16 @@ RequiresSetenv(const char *jvmpath) {
 
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
-                           char jrepath[], jint so_jrepath,
+                           char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
+    if (JLI_IsStaticallyLinked()) {
+        // With static builds, all JDK and VM natives are statically linked
+        // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
+        // by adding <jdk_path>/lib and etc. The 'jrepath', 'jvmpath' and
+        // 'jvmcfg' are not used by the caller for static builds. Simply return.
+        return;
+    }
 
     SetExecname(*pargv);
     if (JLI_IsStaticallyLinked()) {
@@ -299,15 +306,14 @@ fprintf(stderr, "UNIX cEe\n");
 fprintf(stderr, "UNIX cEe 2\n");
 
     /* Check to see if the jvmpath exists */
-    /* Find out where the JRE is that we will be using. */
 #ifndef __IOS__
-    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
-fprintf(stderr, "JREpath issue\n");
-        JLI_ReportErrorMessage(JRE_ERROR1);
+    /* Find out where the JDK is that we will be using. */
+    if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE)) {
+        JLI_ReportErrorMessage(LAUNCHER_ERROR1);
         exit(2);
     }
     JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-            jrepath, FILESEP, FILESEP);
+            jdkroot, FILESEP, FILESEP);
     /* Find the specified JVM type */
     if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
         JLI_ReportErrorMessage(CFG_ERROR7);
@@ -321,14 +327,12 @@ fprintf(stderr, "JREpath issue\n");
         exit(4);
     }
 
-fprintf(stderr, "type = %s\n", jvmtype);
-    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
-fprintf(stderr, "BUMMER path\n");
+    if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
 #endif
-fprintf(stderr, "got path\n");
+
     /*
      * we seem to have everything we need, so without further ado
      * we return back, otherwise proceed to set the environment.
@@ -350,8 +354,8 @@ fprintf(stderr, "got path\n");
          * We will set the LD_LIBRARY_PATH as follows:
          *
          *     o          $JVMPATH (directory portion only)
-         *     o          $JRE/lib
-         *     o          $JRE/../lib
+         *     o          $JDK/lib
+         *     o          $JDK/../lib
          *
          * followed by the user's previous effective LD_LIBRARY_PATH, if
          * any.
@@ -363,7 +367,7 @@ fprintf(stderr, "got path\n");
         { /* New scope to declare local variable */
             char *new_jvmpath = JLI_StringDup(jvmpath);
             new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                    2 * JLI_StrLen(jrepath) +
+                    2 * JLI_StrLen(jdkroot) +
                     JLI_StrLen(new_jvmpath) + 52;
             new_runpath = JLI_MemAlloc(new_runpath_size);
             newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
@@ -383,8 +387,8 @@ fprintf(stderr, "got path\n");
                         "%s/lib:"
                         "%s/../lib",
                         new_jvmpath,
-                        jrepath,
-                        jrepath
+                        jdkroot,
+                        jdkroot
                         );
 
                 JLI_MemFree(new_jvmpath);
@@ -413,7 +417,7 @@ fprintf(stderr, "got path\n");
         if (runpath != 0) {
             /* ensure storage for runpath + colon + NULL */
             if ((JLI_StrLen(runpath) + 1 + 1) > new_runpath_size) {
-                JLI_ReportErrorMessageSys(JRE_ERROR11);
+                JLI_ReportErrorMessageSys(LAUNCHER_ERROR3);
                 exit(1);
             }
             JLI_StrCat(new_runpath, ":");
@@ -448,14 +452,14 @@ fprintf(stderr, "got path\n");
 #else /* !SETENV_REQUIRED */
         execv(newexec, argv);
 #endif /* SETENV_REQUIRED */
-        JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
+        JLI_ReportErrorMessageSys(LAUNCHER_ERROR4, newexec);
     }
     exit(1);
 }
 
 
 static jboolean
-GetJVMPath(const char *jrepath, const char *jvmtype,
+GetJVMPath(const char *jdkroot, const char *jvmtype,
            char *jvmpath, jint jvmpathsize)
 {
     struct stat s;
@@ -463,7 +467,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
     if (JLI_StrChr(jvmtype, '/')) {
         JLI_Snprintf(jvmpath, jvmpathsize, "%s/" JVM_DLL, jvmtype);
     } else {
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jrepath, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jdkroot, jvmtype);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
@@ -478,31 +482,31 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
 }
 
 /*
- * Find path to JRE based on .exe's location or registry settings.
+ * Find path to the JDK installation root
  */
 static jboolean
-GetJREPath(char *path, jint pathsize, jboolean speculative)
+GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
     struct stat s;
 
-    JLI_TraceLauncher("Attempt to get JRE path from launcher executable path\n");
+    JLI_TraceLauncher("Attempt to get JDK installation root from launcher executable path\n");
 
     if (GetApplicationHome(path, pathsize)) {
-        /* Is JRE co-located with the application? */
+        /* Is JDK co-located with the application? */
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (access(libjava, F_OK) == 0) {
-            JLI_TraceLauncher("JRE path is %s\n", path);
+            JLI_TraceLauncher("JDK installation root path is %s\n", path);
             return JNI_TRUE;
         }
     }
 
-    JLI_TraceLauncher("Attempt to get JRE path from shared lib of the image\n");
+    JLI_TraceLauncher("Attempt to get JDK installation root path from shared lib of the image\n");
 
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (stat(libjava, &s) == 0) {
-            JLI_TraceLauncher("JRE path is %s\n", path);
+            JLI_TraceLauncher("JDK installation root path is %s\n", path);
             return JNI_TRUE;
         }
     }
@@ -512,14 +516,14 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     if (GetApplicationHomeFromLibpath(path, pathsize)) {
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (stat(libjava, &s) == 0) {
-            JLI_TraceLauncher("JRE path is %s\n", path);
+            JLI_TraceLauncher("JDK installation root path is %s\n", path);
             return JNI_TRUE;
         }
     }
 #endif
 
     if (!speculative)
-      JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
+      JLI_ReportErrorMessage(LAUNCHER_ERROR2 JAVA_DLL);
     return JNI_FALSE;
 }
 
@@ -617,25 +621,29 @@ static void* hSplashLib = NULL;
 void* SplashProcAddress(const char* name) {
     if (!hSplashLib) {
         int ret;
-        char jrePath[MAXPATHLEN];
+        char jdkRoot[MAXPATHLEN];
         char splashPath[MAXPATHLEN];
 
-        if (!GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE)) {
-            JLI_ReportErrorMessage(JRE_ERROR1);
-            return NULL;
-        }
-        ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s",
-                     jrePath, SPLASHSCREEN_SO);
+        if (JLI_IsStaticallyLinked()) {
+            hSplashLib = dlopen(NULL, RTLD_LAZY);
+        } else {
+            if (!GetJDKInstallRoot(jdkRoot, sizeof(jdkRoot), JNI_FALSE)) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+                return NULL;
+            }
+            ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s",
+                           jdkRoot, SPLASHSCREEN_SO);
 
-        if (ret >= (int) sizeof(splashPath)) {
-            JLI_ReportErrorMessage(JRE_ERROR11);
-            return NULL;
+            if (ret >= (int) sizeof(splashPath)) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR3);
+                return NULL;
+            }
+            if (ret < 0) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR5);
+                return NULL;
+            }
+            hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
         }
-        if (ret < 0) {
-            JLI_ReportErrorMessage(JRE_ERROR13);
-            return NULL;
-        }
-        hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
         JLI_TraceLauncher("Info: loaded %s\n", splashPath);
     }
     if (hSplashLib) {

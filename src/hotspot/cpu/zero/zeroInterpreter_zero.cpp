@@ -347,9 +347,6 @@ fprintf(stderr, "[ZERO] native_entry called\n");
           success = false;
         }
       }
-      if (success) {
-        THREAD->inc_held_monitor_count();
-      }
     }
     if (!success) {
       CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
@@ -499,9 +496,6 @@ fprintf(stderr, "[ZERO] native_entry called\n");
           monitor->set_obj(rcvr);
           success = false;
         }
-      }
-      if (success) {
-        THREAD->dec_held_monitor_count();
       }
     }
     if (!success) {
