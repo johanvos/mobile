@@ -58,6 +58,8 @@ static jboolean initIDs(JNIEnv *env)
     return JNI_TRUE;
 }
 
+extern int *dummyJniLoad(JNIEnv *env, void* handle);
+
 /*
  * Support for finding JNI_On(Un)Load_<lib_name> if it exists.
  * If cname == NULL then just find normal JNI_On(Un)Load entry point
@@ -88,6 +90,10 @@ static void *findJniFunction(JNIEnv *env, void *handle,
         strcat(jniFunctionName, cname);
     }
     entryName = JVM_FindLibraryEntry(handle, jniFunctionName);
+    if(entryName == NULL) {
+        fprintf(stderr, "[JVDBG] findJniFunction for %s returned null, use dummy %p instead.\n", cname, dummyJniLoad);
+        return *dummyJniLoad;
+    }
     free(jniFunctionName);
 
  done:
@@ -117,15 +123,19 @@ Java_jdk_internal_loader_NativeLibraries_load
     if (cname == 0)
         return JNI_FALSE;
     handle = isBuiltin ? procHandle : JVM_LoadLibrary(cname, throwExceptionIfFail);
+fprintf(stderr, "[JVDBG] NativeLib_load, handle = %p\n", handle);
     if (handle) {
         JNI_OnLoad_t JNI_OnLoad;
         JNI_OnLoad = (JNI_OnLoad_t)findJniFunction(env, handle,
                                                    isBuiltin ? cname : NULL,
                                                    JNI_TRUE);
+fprintf(stderr, "[JVDBG] NativeLib_load, JNI_OnLoad = %p or %p\n", JNI_OnLoad, *JNI_OnLoad);
         if (JNI_OnLoad) {
             JavaVM *jvm;
             (*env)->GetJavaVM(env, &jvm);
+fprintf(stderr, "invoke\n");
             jniVersion = (*JNI_OnLoad)(jvm, NULL);
+fprintf(stderr, "invoked\n");
         } else {
             jniVersion = 0x00010001;
         }
@@ -249,6 +259,7 @@ Java_jdk_internal_loader_NativeLibraries_findBuiltinLib
     }
     procHandle = getProcessHandle();
     cname = JNU_GetStringPlatformChars(env, name, 0);
+fprintf(stderr, "[JVDBG]C findBuiltinLib for %s\n", cname);
     if (cname == NULL) {
         return NULL;
     }
@@ -274,6 +285,7 @@ Java_jdk_internal_loader_NativeLibraries_findBuiltinLib
 
     // Check for JNI_OnLoad_libname function
     ret = findJniFunction(env, procHandle, libName, JNI_TRUE);
+fprintf(stderr, "[JVDBG]C libname = %s and ret = %p\n", libName, ret);
     if (ret != NULL) {
         lib = JNU_NewStringPlatform(env, libName);
         free(libName);

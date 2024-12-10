@@ -492,7 +492,7 @@ fprintf(stderr, "java_home part 1 is set to %s\n", buf);
 fprintf(stderr, "java_home is set to %s\n", buf);
 #ifdef __IOS__
 char modules[1024];
-snprintf(modules, sizeof(modules), "%s/modules",buf);
+snprintf(modules, sizeof(modules), "%s/Documents/modules",buf);
 fprintf(stderr, "trying to create modules dir at %s\n", modules);
 struct stat st;
 if (stat(modules, &st) == 0) {
@@ -1536,7 +1536,7 @@ void os::jvm_path(char *buf, jint buflen) {
 #ifdef __IOS__
   const char *homeDir = getenv("HOME");
   fprintf(stderr, "[JVDBG] ios homedir = %s\n", homeDir);
-  snprintf(buf, buflen, "%s", homeDir);
+  snprintf(buf, buflen, "%s/Documents/", homeDir);
   return;
 #endif
   if (ret && dli_fname[0] != '\0') {

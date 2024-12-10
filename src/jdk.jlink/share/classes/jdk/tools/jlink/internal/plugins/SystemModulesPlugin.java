@@ -230,6 +230,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
      */
     private Set<String> genSystemModulesClasses(List<ModuleInfo> moduleInfos,
                                                 ResourcePoolBuilder out) {
+System.err.println("GENERATE SYSTEMMODULESCLASSES");
         int moduleCount = moduleInfos.size();
         ModuleFinder finder = finderOf(moduleInfos);
         assert finder.findAll().size() == moduleCount;

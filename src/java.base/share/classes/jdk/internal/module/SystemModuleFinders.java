@@ -184,7 +184,9 @@ public final class SystemModuleFinders {
         // probe to see if this is an images build
         String home = StaticProperty.javaHome();
         Path modules = Path.of(home, "lib", "modules");
+System.err.println("[JVDBG]MODULEFINDERofSystem, modules = " + modules);
         if (Files.isRegularFile(modules)) {
+System.err.println("[JVDBG]MODULEFINDERofSystem, regularfile");
             if (USE_FAST_PATH) {
                 SystemModules systemModules = allSystemModules();
                 if (systemModules != null) {

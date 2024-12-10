@@ -140,6 +140,7 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
         goto done;
     }
 
+fprintf(stderr, "[JVDBG]ClassLoader.c findclass %s\n", clname);
     cls = JVM_FindClassFromCaller(env, clname, initialize, loader, caller);
 
  done:

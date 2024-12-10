@@ -707,7 +707,7 @@ fprintf(stderr, "[JVDBG] sysdic, return of find_class = %p\n", check);
     if (loaded_class == nullptr) {
       // Do actual loading
       loaded_class = load_instance_class(name, class_loader, THREAD);
-fprintf(stderr, "[JVDBG] sysdic loaded_instance_class called, now class = %p\n");
+fprintf(stderr, "[JVDBG] sysdic loaded_instance_class called, now class = %p\n", loaded_class);
     }
 
     if (load_placeholder_added) {
@@ -1212,6 +1212,7 @@ fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is null\n");
     // Prior to attempting to load the class, enforce the boot loader's
     // visibility boundaries.
     if (!Universe::is_module_initialized()) {
+fprintf(stderr, "[Universe] NOT module_initialized\n");
       // During bootstrapping, prior to module initialization, any
       // class attempting to be loaded must be checked against the
       // java.base packages in the boot loader's PackageEntryTable.
@@ -1237,9 +1238,11 @@ fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is null\n");
         }
       }
     } else {
+fprintf(stderr, "[Universe] YES module_initialized\n");
       // After the module system has been initialized, check if the class'
       // package is in a module defined to the boot loader.
       if (pkg_name == nullptr || pkg_entry == nullptr || pkg_entry->in_unnamed_module()) {
+fprintf(stderr, "[sysdic]pkg or similar null\n");
         // Class is either in the unnamed package, in a named package
         // within a module not defined to the boot loader or in a
         // a named package within the unnamed module.  In all cases,
@@ -1248,7 +1251,8 @@ fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is null\n");
         if (!ClassLoader::has_bootclasspath_append()) {
            // If there is no bootclasspath append entry, no need to continue
            // searching.
-           return nullptr;
+fprintf(stderr, "[sysdic] BIG FAIL. but ignore\n");
+           // return nullptr;
         }
         search_only_bootloader_append = true;
       }

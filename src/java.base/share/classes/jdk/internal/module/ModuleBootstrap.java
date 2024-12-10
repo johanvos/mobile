@@ -255,6 +255,8 @@ public final class ModuleBootstrap {
         // loaded then resources in java.base are available for error messages
         // needed from here on.
 
+System.err.println("[JVDBG] HELLOMODULEBOOTSTRAP");
+System.err.println("[JVDBG] smf = " + systemModuleFinder);
         ModuleReference base = systemModuleFinder.find(JAVA_BASE).orElse(null);
         if (base == null)
             throw new InternalError(JAVA_BASE + " not found");
