@@ -313,6 +313,9 @@ void os::Bsd::initialize_system_info() {
 #ifdef __APPLE__
 static const char *get_home() {
   const char *home_dir = ::getenv("HOME");
+fprintf(stderr, "APPLEHOME = %s\n", home_dir);
+  const char *home_dir2 = getenv("HOME");
+fprintf(stderr, "APPLEHOME2 = %s\n", home_dir2);
   if ((home_dir == nullptr) || (*home_dir == '\0')) {
     struct passwd *passwd_info = getpwuid(geteuid());
     if (passwd_info != nullptr) {
@@ -383,6 +386,7 @@ void os::init_system_properties_values() {
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
+fprintf(stderr, "[JVDBG] in initsysprops, jvmpath? %s\n", buf);
 
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
@@ -405,7 +409,7 @@ void os::init_system_properties_values() {
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
+      vm_exit_during_initialization("Failed1 setting boot class path.", nullptr);
     }
   }
 
@@ -447,6 +451,7 @@ void os::init_system_properties_values() {
   #define SYS_EXTENSIONS_DIRS  SYS_EXTENSIONS_DIR ":/Network" SYS_EXTENSIONS_DIR ":/System" SYS_EXTENSIONS_DIR ":/usr/lib/java"
 
   const char *user_home_dir = get_home();
+fprintf(stderr, "USERHOME = %s\n", user_home_dir);
   // The null in SYS_EXTENSIONS_DIRS counts for the size of the colon after user_home_dir.
   size_t system_ext_size = strlen(user_home_dir) + sizeof(SYS_EXTENSIONS_DIR) +
     sizeof(SYS_EXTENSIONS_DIRS);
@@ -463,29 +468,42 @@ void os::init_system_properties_values() {
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
+fprintf(stderr, "JVMPATH = %s\n", buf);
 
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
     *(strrchr(buf, '/')) = '\0'; // Get rid of /libjvm.so.
+#ifndef __IOS__
     pslash = strrchr(buf, '/');
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
+#endif
+fprintf(stderr, "JVMPATH2 = %s\n", buf);
     if (is_vm_statically_linked()) {
       strcat(buf, "/lib");
     }
 
     Arguments::set_dll_dir(buf);
 
+#ifndef __IOS__
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
         *pslash = '\0';          // Get rid of /lib.
       }
     }
-    Arguments::set_java_home(buf);
+#endif
+fprintf(stderr, "JVMPATH33 = %s\n", buf);
+    // Arguments::set_java_home(buf);
+fprintf(stderr, "JVMPATH4 = %s\n", user_home_dir);
+size_t nlen = strlen(user_home_dir) + 11;
+char *jvhome = NEW_C_HEAP_ARRAY(char, nlen, mtInternal);
+snprintf(jvhome, nlen, "%s/Documents", user_home_dir);
+fprintf(stderr, "newjavahome = %s\n", jvhome);
+    Arguments::set_java_home(jvhome);
     if (!set_boot_path('/', ':')) {
-        vm_exit_during_initialization("Failed setting boot class path.", nullptr);
+        vm_exit_during_initialization("Failed2 setting boot class path.", nullptr);
     }
   }
 
@@ -967,6 +985,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       if (!(demangle && Decoder::demangle(localbuf, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", localbuf);
       }
+fprintf(stderr, "intme buf = %s\n",buf);
       return true;
     }
 
@@ -992,6 +1011,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
     }
+fprintf(stderr, "datln bug = %s\n", buf);
     return true;
   }
 
@@ -1501,12 +1521,23 @@ void os::jvm_path(char *buf, jint buflen) {
                                          dli_fname, sizeof(dli_fname), nullptr);
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
+ fprintf(stderr, "BUFFFF2b = %s\n", dli_fname);
+#ifdef __IOS__ 
+  const char *homeDir = getenv("HOME");
+  fprintf(stderr, "[JVDBG] ios homedir = %s\n", homeDir);
+  snprintf(buf, buflen, "%s/Documents/", homeDir);
+  return; 
+#endif
+
   if (ret && dli_fname[0] != '\0') {
     rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
   }
+fprintf(stderr, "dli = %s\n", dli_fname);
+fprintf(stderr, "ojp = %s\n", os::jvm_path);
+fprintf(stderr, "RP = %s\n", rp);
 
   if (Arguments::sun_java_launcher_is_altjvm()) {
     // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
@@ -1790,7 +1821,11 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
   const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+#ifdef __IOS__
+    ;
+#else
       MACOS_ONLY(| (exec ? MAP_JIT : 0));
+#endif
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might

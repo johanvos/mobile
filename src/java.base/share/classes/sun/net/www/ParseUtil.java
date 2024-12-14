@@ -233,6 +233,7 @@ public final class ParseUtil {
         throws MalformedURLException
     {
         String path = file.getAbsolutePath();
+System.err.println("[JAVA] ParseUtil 236  path = " + path+" for file = " + file);
         path = ParseUtil.encodePath(path);
         if (!path.startsWith("/")) {
             path = "/" + path;

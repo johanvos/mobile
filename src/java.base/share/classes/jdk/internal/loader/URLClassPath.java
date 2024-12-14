@@ -132,6 +132,7 @@ public class URLClassPath {
         ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(urls.length);
         for (URL url : urls) {
             path.add(url);
+System.err.println("[JAVA] UCP 135 push " + url);
             unopenedUrls.add(url);
         }
         this.path = path;
@@ -158,6 +159,8 @@ public class URLClassPath {
      * @apiNote Used to create the application class path.
      */
     URLClassPath(String cp, boolean skipEmptyElements) {
+System.err.println("[JAVA] UCP 162 cp = " + cp);
+Thread.dumpStack();
         ArrayList<URL> path = new ArrayList<>();
         if (cp != null) {
             // map each element of class path to a file URL
@@ -179,9 +182,10 @@ public class URLClassPath {
         // it's too early in the bootstrap to trigger use of lambdas
         int size = path.size();
         ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(size);
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++) {
+System.err.println("[JAVA] UCP 184 push " + path.get(i));
             unopenedUrls.add(path.get(i));
-
+        }
         this.unopenedUrls = unopenedUrls;
         this.path = path;
         // the application class loader uses the built-in protocol handler to avoid protocol
@@ -217,6 +221,7 @@ public class URLClassPath {
             return;
         synchronized (unopenedUrls) {
             if (! path.contains(url)) {
+System.err.println("[JAVA] UCP 225 push " + url);
                 unopenedUrls.addLast(url);
                 path.add(url);
             }
@@ -239,7 +244,9 @@ public class URLClassPath {
     private static URL toFileURL(String s) {
         try {
             File f = new File(s).getCanonicalFile();
-            return ParseUtil.fileToEncodedURL(f);
+            URL answer = ParseUtil.fileToEncodedURL(f);
+System.err.println("[JAVA] toFileURL for " + s+" will return " + answer);
+return answer;
         } catch (IOException e) {
             return null;
         }
@@ -323,9 +330,9 @@ public class URLClassPath {
      * @return the Resource, or null if not found
      */
     public Resource getResource(String name) {
-        if (DEBUG) {
-            System.err.println("URLClassPath.getResource(\"" + name + "\")");
-        }
+        // if (DEBUG) {
+            System.err.println("[JAVA] UCP 327 URLClassPath.getResource(\"" + name + "\")");
+        // }
 
         Loader loader;
         for (int i = 0; (loader = getLoader(i)) != null; i++) {
@@ -390,6 +397,7 @@ public class URLClassPath {
         }
         // Expand URL search path until the request can be satisfied
         // or unopenedUrls is exhausted.
+System.err.println("[JAVA]  loaders = " +loaders);
         while (loaders.size() < index + 1) {
             final URL url;
             synchronized (unopenedUrls) {
@@ -406,6 +414,7 @@ public class URLClassPath {
             Loader loader = null;
             final URL[] loaderClassPathURLs;
             try {
+System.err.println("[JAVA] UCP 409 url = " + url);
                 loader = getLoader(url);
                 // If the loader defines a local class path then add the
                 // URLs as the next URLs to be opened.
@@ -446,8 +455,13 @@ public class URLClassPath {
      * Returns the Loader for the specified base URL.
      */
     private Loader getLoader(final URL url) throws IOException {
+System.err.println("JAVA URLCP LOAD URL " + url);
+Thread.dumpStack();
         String protocol = url.getProtocol();  // lower cased in URL
         String file = url.getFile();
+System.err.println("JAVA NEED TO LOAD URL " + url);
+System.err.println("JAVA NEED TO LOAD file " + file);
+Thread.dumpStack();
         if (file != null && file.endsWith("/")) {
             if ("file".equals(protocol)) {
                 return new FileLoader(url);
@@ -480,6 +494,7 @@ public class URLClassPath {
     private void push(URL[] urls) {
         synchronized (unopenedUrls) {
             for (int i = urls.length - 1; i >= 0; --i) {
+System.err.println("[JAVA] UCP 485 push " + urls[i]);
                 unopenedUrls.addFirst(urls[i]);
             }
         }

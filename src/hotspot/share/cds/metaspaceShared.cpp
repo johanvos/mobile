@@ -1050,6 +1050,7 @@ bool MetaspaceShared::is_shared_static(void* p) {
   }
 }
 
+extern void failInApp();
 // This function is called when the JVM is unable to load the specified archive(s) due to one
 // of the following conditions.
 // - There's an error that indicates that the archive(s) files were corrupt or otherwise damaged.
@@ -1057,6 +1058,7 @@ bool MetaspaceShared::is_shared_static(void* p) {
 //   to version or classpath mismatch.
 void MetaspaceShared::unrecoverable_loading_error(const char* message) {
   log_error(cds)("An error has occurred while processing the shared archive file.");
+failInApp();
   if (message != nullptr) {
     log_error(cds)("%s", message);
   }

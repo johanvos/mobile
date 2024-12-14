@@ -332,7 +332,9 @@ static void handle_resolution_exception(Symbol* class_name, bool throw_error, TR
 
 Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader,
                                          bool throw_error, TRAPS) {
+fprintf(stderr, "Need to resolve_or_fail %s\n", class_name->as_C_string());
   Klass* klass = resolve_or_null(class_name, class_loader, THREAD);
+fprintf(stderr, "Did resolve_or_fail %s into %p\n", class_name->as_C_string(), klass);
   // Check for pending exception or null klass, and throw exception
   if (HAS_PENDING_EXCEPTION || klass == nullptr) {
     handle_resolution_exception(class_name, throw_error, CHECK_NULL);
@@ -1192,6 +1194,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 
   if (class_loader.is_null()) {
+fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is null\n");
     ResourceMark rm(THREAD);
     PackageEntry* pkg_entry = nullptr;
     bool search_only_bootloader_append = false;
@@ -1205,6 +1208,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     // Prior to attempting to load the class, enforce the boot loader's
     // visibility boundaries.
     if (!Universe::is_module_initialized()) {
+fprintf(stderr, "[Universe] NOT module_initialized\n");
       // During bootstrapping, prior to module initialization, any
       // class attempting to be loaded must be checked against the
       // java.base packages in the boot loader's PackageEntryTable.
@@ -1230,6 +1234,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
         }
       }
     } else {
+fprintf(stderr, "[Universe] YES module_initialized\n");
       // After the module system has been initialized, check if the class'
       // package is in a module defined to the boot loader.
       if (pkg_name == nullptr || pkg_entry == nullptr || pkg_entry->in_unnamed_module()) {
@@ -1241,6 +1246,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
         if (!ClassLoader::has_bootclasspath_append()) {
            // If there is no bootclasspath append entry, no need to continue
            // searching.
+fprintf(stderr, "[sysdic] BIG FAIL. but ignore\n");
            return nullptr;
         }
         search_only_bootloader_append = true;
@@ -1264,6 +1270,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
       if (ik != nullptr && ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
         SharedClassLoadingMark slm(THREAD, ik);
         k = load_shared_class(ik, class_loader, Handle(), nullptr,  pkg_entry, CHECK_NULL);
+fprintf(stderr, "[JVDBG] did CL::load_class and got %p\n", k);
       }
     }
 #endif
@@ -1281,6 +1288,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     }
     return k;
   } else {
+fprintf(stderr, "[JVDBG] sysdic load_instance_class_impl and loader is NOT null\n");
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
     ResourceMark rm(THREAD);
 
@@ -1323,10 +1331,12 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
       // the same as that requested.  This check is done for the bootstrap
       // loader when parsing the class file.
       if (class_name == k->name()) {
+fprintf(stderr, "Yes, we have the class %s!\n", class_name->as_C_string());
         return k;
       }
     }
     // Class is not found or has the wrong name, return null
+fprintf(stderr, "No don't have the class %s!\n", class_name->as_C_string());
     return nullptr;
   }
 }

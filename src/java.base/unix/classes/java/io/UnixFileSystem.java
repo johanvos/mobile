@@ -148,12 +148,16 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public String resolve(File f) {
+System.err.println("[JAVA] need to resolve " + f+" and userDir = " + userDir);
         if (isAbsolute(f)) return f.getPath();
-        return resolve(userDir, f.getPath());
+        String answer = resolve(userDir, f.getPath());
+System.err.println("[JAVA] resolved in " + answer);
+return answer;
     }
 
     @Override
     public String canonicalize(String path) throws IOException {
+System.err.println("[JAVA] canonicalize path " + path);
         return canonicalize0(path);
     }
     private native String canonicalize0(String path) throws IOException;

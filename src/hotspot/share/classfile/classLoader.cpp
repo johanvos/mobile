@@ -719,8 +719,11 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
   const char *module_name = module_sym->as_C_string();
   const char *path = get_exploded_module_path(module_name, false);
 
+fprintf(stderr, "Add_to_explodedbl mod name %s and path %s\n", module_name, path);
+
   struct stat st;
   if (os::stat(path, &st) == 0) {
+fprintf(stderr, "dir found\n");
     // Directory found
     ClassPathEntry* new_entry = create_class_path_entry(current, path, &st, false, false);
 
@@ -729,6 +732,7 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
     // since no two modules with the same name can be defined to the boot loader.
     // This is checked at module definition time in Modules::define_module.
     if (new_entry != nullptr) {
+fprintf(stderr, "ne not null\n");
       ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
       module_cpl->add_to_list(new_entry);
       {
@@ -738,6 +742,7 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
       log_info(class, load)("path: %s", path);
     }
   }
+fprintf(stderr, "Adddone\n");
 }
 
 jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread) {
@@ -1070,11 +1075,13 @@ static ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
                                              const GrowableArray<ModuleClassPathList*>* const module_list) {
   int num_of_entries = module_list->length();
   const Symbol* class_module_name = mod_entry->name();
+fprintf(stderr, "NUMEntries = %d and name = %s\n", num_of_entries, mod_entry->name()->as_C_string());
 
   // Loop through all the modules in either the patch-module or exploded entries looking for module
   for (int i = 0; i < num_of_entries; i++) {
     ModuleClassPathList* module_cpl = module_list->at(i);
     Symbol* module_cpl_name = module_cpl->module_name();
+fprintf(stderr, "cplname = %s\n", module_cpl_name->as_C_string());
 
     if (module_cpl_name->fast_compare(class_module_name) == 0) {
       // Class' module has been located.
@@ -1091,34 +1098,40 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
+fprintf(stderr, "[JVDBG] s0\n"); 
 
   // Find the defining module in the boot loader's module entry table
   ModuleEntry* mod_entry = (pkg_entry != nullptr) ? pkg_entry->module() : nullptr;
+fprintf(stderr, "[JVDBG] mod_entry = %p\n", mod_entry);
 
   // If the module system has not defined java.base yet, then
   // classes loaded are assumed to be defined to java.base.
-  // When java.base is eventually defined by the module system,
+  // When java.base is eventually defined by the module system, 
   // all packages of classes that have been previously loaded
   // are verified in ModuleEntryTable::verify_javabase_packages().
   if (!Universe::is_module_initialized() &&
       !ModuleEntryTable::javabase_defined() &&
       mod_entry == nullptr) {
     mod_entry = ModuleEntryTable::javabase_moduleEntry();
+fprintf(stderr, "[JVDBG] mod_entry2 = %p\n", mod_entry);
   }
 
   // The module must be a named module
   ClassPathEntry* e = nullptr;
   if (mod_entry != nullptr && mod_entry->is_named()) {
     if (module_list == _exploded_entries) {
-      // The exploded build entries can be added to at any time so a lock is
+fprintf(stderr, "[JVDBG] mod_entry3 = %p\n", mod_entry);
+      // The exploded build entries can be added to at any time so a lock is 
       // needed when searching them.
       assert(!ClassLoader::has_jrt_entry(), "Must be exploded build");
       MutexLocker ml(current, Module_lock);
       e = find_first_module_cpe(mod_entry, module_list);
     } else {
+fprintf(stderr, "[JVDBG] mod_entry4 = %p\n", mod_entry);
       e = find_first_module_cpe(mod_entry, module_list);
     }
   }
+fprintf(stderr, "[JVDBG] mod_entry4 e = %p\n", e);
 
   // Try to load the class from the module's ClassPathEntry list.
   while (e != nullptr) {
@@ -1139,6 +1152,7 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
 // Called by the boot classloader to load classes
 InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bool search_append_only, TRAPS) {
   assert(name != nullptr, "invariant");
+fprintf(stderr, "[JVDBG] ClassLoader::load_class asked\n");
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
@@ -1146,16 +1160,19 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   const char* const class_name = name->as_C_string();
 
   EventMarkClassLoading m("Loading class %s", class_name);
+fprintf(stderr, "[JVDBG] ClassLoader::load_class named %s\n", class_name);
+
 
   const char* const file_name = file_name_for_class_name(class_name,
                                                          name->utf8_length());
+fprintf(stderr, "[JVDBG] ClassLoader::load_class at loc %s\n", file_name);
   assert(file_name != nullptr, "invariant");
 
   // Lookup stream for parsing .class file
   ClassFileStream* stream = nullptr;
   s2 classpath_index = 0;
   ClassPathEntry* e = nullptr;
-
+fprintf(stderr, "[JVDBG] here we need the stream\n");
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
   //   [-Xbootclasspath/a]; [jvmti appended entries]
@@ -1179,11 +1196,16 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   }
 
   // Load Attempt #2: [jimage | exploded build]
+fprintf(stderr, "[JVDBG] at#2, stream = %p\n", stream);
+print_bootclasspath();
   if (!search_append_only && (nullptr == stream)) {
+fprintf(stderr, "[JVDBG] at#2a, stream = %p\n", stream);
     if (has_jrt_entry()) {
+fprintf(stderr, "[JVDBG] at#2b, stream = %p\n", stream);
       e = _jrt_entry;
       stream = _jrt_entry->open_stream(THREAD, file_name);
     } else {
+fprintf(stderr, "[JVDBG] at#2c, stream = %p\n", stream);
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
       assert(!CDSConfig::is_dumping_archive(), "CDS dumping doesn't support exploded build");
@@ -1191,6 +1213,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     }
   }
 
+fprintf(stderr, "[JVDBG] at#3, stream = %p\n", stream);
   // Load Attempt #3: [-Xbootclasspath/a]; [jvmti appended entries]
   if (search_append_only && (nullptr == stream)) {
     // For the boot loader append path search, the starting classpath_index

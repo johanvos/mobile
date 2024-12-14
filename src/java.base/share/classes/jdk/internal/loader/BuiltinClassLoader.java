@@ -575,6 +575,7 @@ public class BuiltinClassLoader
     protected Class<?> loadClass(String cn, boolean resolve)
         throws ClassNotFoundException
     {
+System.err.println("[JAVA]BC, need to load class with string cn = " + cn);
         Class<?> c = loadClassOrNull(cn, resolve);
         if (c == null)
             throw new ClassNotFoundException(cn);
@@ -617,6 +618,7 @@ public class BuiltinClassLoader
 
                     // check class path
                     if (c == null && hasClassPath() && VM.isModuleSystemInited()) {
+System.err.println("[JAVA] BCL, 621 cn = " + cn);
                         c = findClassOnClassPathOrNull(cn);
                     }
                 }
@@ -685,6 +687,7 @@ public class BuiltinClassLoader
      */
     private Class<?> findClassOnClassPathOrNull(String cn) {
         String path = cn.replace('.', '/').concat(".class");
+System.err.println("[JAVA] BCL 690, path = " + path);
         Resource res = ucp.getResource(path);
         if (res != null) {
             try {

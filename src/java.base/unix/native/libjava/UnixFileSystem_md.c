@@ -126,7 +126,10 @@ Java_java_io_UnixFileSystem_getBooleanAttributes0(JNIEnv *env, jobject this,
             rv = (jint) (java_io_FileSystem_BA_EXISTS
                   | ((fmt == S_IFREG) ? java_io_FileSystem_BA_REGULAR : 0)
                   | ((fmt == S_IFDIR) ? java_io_FileSystem_BA_DIRECTORY : 0));
-        }
+        } else {
+fprintf(stderr, "[NATIVEFILE] no statmode\n");
+}
+fprintf(stderr, "[NATIVEFILE] boolean atts for %s: %d\n", path, rv);
     } END_PLATFORM_STRING(env, path);
     return rv;
 }

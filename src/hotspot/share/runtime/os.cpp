@@ -1410,6 +1410,8 @@ char* os::format_boot_path(const char* format_string,
                            char pathSep) {
     assert((fileSep == '/' && pathSep == ':') ||
            (fileSep == '\\' && pathSep == ';'), "unexpected separator chars");
+fprintf(stderr, "formattedstring = %s\n", format_string);
+fprintf(stderr, "home = %s\n", home);
 
     // Scan the format string to determine the length of the actual
     // boot classpath, and handle platform dependencies as well.
@@ -1444,6 +1446,7 @@ char* os::format_boot_path(const char* format_string,
     *q = '\0';
 
     assert((q - formatted_path) == formatted_path_len, "formatted_path size botched");
+fprintf(stderr, "formattedpath = %s\n", formatted_path);
     return formatted_path;
 }
 
@@ -1481,7 +1484,10 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   struct stat st;
 
   // modular image if "modules" jimage exists
-  char* jimage = format_boot_path("%/lib/" MODULES_IMAGE_NAME, home, home_len, fileSep, pathSep);
+  char* jimage = format_boot_path("%/Documents/lib/" MODULES_IMAGE_NAME, home, home_len, fileSep, pathSep);
+fprintf(stderr, "[JVDBG] search imagename = %s\n", MODULES_IMAGE_NAME);
+fprintf(stderr, "[JVDBG] search javahome = %s\n", home);
+fprintf(stderr, "[JVDBG] search for jimage %s\n", jimage);
   if (jimage == nullptr) return false;
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
@@ -1493,6 +1499,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 
   // check if developer build with exploded modules
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
+fprintf(stderr, "[JVDBG] search for base_classes %s\n", base_classes);
   if (base_classes == nullptr) return false;
   if (os::stat(base_classes, &st) == 0) {
     Arguments::set_boot_class_path(base_classes, false);

@@ -363,6 +363,7 @@ java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
     static java_props_t sprops;
+fprintf(stderr, "GetJavaProperties asked, sprops.user_dir = %p\n", sprops.user_dir);
 
     if (sprops.user_dir) {
         return &sprops;
@@ -519,16 +520,24 @@ GetJavaProperties(JNIEnv *env)
 
     /* Current directory */
     {
+#ifdef __IOS__
+    const char *homeDir = getenv("HOME");
+    sprops.user_dir = strdup(homeDir);
+fprintf(stderr, "iosUSERDIR at %s\n", sprops.user_dir);
+#else
         char buf[MAXPATHLEN];
         errno = 0;
         if (getcwd(buf, sizeof(buf)) == NULL) {
+fprintf(stderr, "USERDIR issue\n");
             JNU_ThrowByName(env, "java/lang/Error",
             "Properties init: Could not determine current working directory.");
             return NULL;
         }
         else {
+fprintf(stderr, "USERDIR at %s\n", buf);
             sprops.user_dir = strdup(buf);
         }
+#endif
     }
 
     sprops.file_separator = "/";

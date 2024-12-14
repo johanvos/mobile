@@ -645,7 +645,9 @@ void vm_exit_during_cds_dumping(const char* error, const char* message) {
   vm_abort(false);
 }
 
+extern void failInApp();
 static void vm_notify_during_shutdown(const char* error, const char* message) {
+failInApp();
   if (error != nullptr) {
     tty->print_cr("Error occurred during initialization of VM");
     tty->print("%s", error);
@@ -669,6 +671,7 @@ void vm_exit_during_initialization() {
 }
 
 void vm_exit_during_initialization(Handle exception) {
+failInApp();
   tty->print_cr("Error occurred during initialization of VM");
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires

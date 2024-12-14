@@ -635,8 +635,10 @@ public class File
      */
     public File getCanonicalFile() throws IOException {
         String canonPath = getCanonicalPath();
+System.err.println("[JAVA] canonpath = " + canonPath);
         if (getClass() != File.class) {
             canonPath = FS.normalize(canonPath);
+System.err.println("[JAVA] normalized canonpath = " + canonPath);
         }
         return new File(canonPath, FS.prefixLength(canonPath));
     }
