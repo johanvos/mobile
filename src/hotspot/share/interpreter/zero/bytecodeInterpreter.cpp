@@ -602,6 +602,10 @@ void BytecodeInterpreter::run(interpreterState istate) {
   uintptr_t *dispatch_table = (uintptr_t*)&opclabels_data[0];
 #endif /* USELABELS */
 
+ Method* m = istate->method();
+    const char* method_name = m->name()->as_C_string();
+    const char* class_name = m->klass_name()->as_C_string();
+    // fprintf(stderr, "[Zero] Invoking: %s.%s\n", class_name, method_name);
   switch (istate->msg()) {
     case initialize: {
       ShouldNotCallThis();

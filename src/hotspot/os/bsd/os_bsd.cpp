@@ -105,6 +105,9 @@
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
 #endif
+#ifdef __IOS__
+// #include <CoreFoundation/CoreFoundation.h>
+#endif
 
 #ifndef MAP_ANONYMOUS
   #define MAP_ANONYMOUS MAP_ANON
@@ -299,6 +302,14 @@ void os::Bsd::initialize_system_info() {
 
 #ifdef __APPLE__
 static const char *get_home() {
+// #ifdef __IOS__
+  // CFBundleRef mainBundle = CFBundleGetMainBundle();
+  // int PATH_MAX=512;
+ // char path[PATH_MAX];
+    // if (CFURLGetFileSystemRepresentation(resourcesURL, true, (UInt8 *)path, PATH_MAX)) {
+  // const char *home_dir = path;
+// fprintf(stderr, "SETTING HOMEDIR to %s\n", path);
+// #else
   const char *home_dir = ::getenv("HOME");
   if ((home_dir == nullptr) || (*home_dir == '\0')) {
     struct passwd *passwd_info = getpwuid(geteuid());
@@ -306,12 +317,14 @@ static const char *get_home() {
       home_dir = passwd_info->pw_dir;
     }
   }
+// #endif
 
   return home_dir;
 }
 #endif
 
 void os::init_system_properties_values() {
+fprintf(stderr, "WILL NOW SET init_system_properties_values\n");
   // The next steps are taken in the product version:
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
@@ -392,7 +405,7 @@ void os::init_system_properties_values() {
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
+      vm_exit_during_initialization("Failed 1 setting boot class path.", nullptr);
     }
   }
 
@@ -450,6 +463,7 @@ void os::init_system_properties_values() {
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
+fprintf(stderr, "BUF = %s\n", buf);
 
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
@@ -459,10 +473,10 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
-#endif
     if (is_vm_statically_linked()) {
       strcat(buf, "/lib");
     }
+#endif
 
     Arguments::set_dll_dir(buf);
 
@@ -478,10 +492,12 @@ void os::init_system_properties_values() {
     size_t nlen = strlen(user_home_dir) + 11;
     char *iosuser_home = NEW_C_HEAP_ARRAY(char, nlen, mtInternal);
     snprintf(iosuser_home, nlen, "%s/Documents", user_home_dir);
-    Arguments::set_java_home(iosuser_home);
+    // Arguments::set_java_home(iosuser_home);
+    Arguments::set_java_home(buf);
 #endif
     if (!set_boot_path('/', ':')) {
-        vm_exit_during_initialization("Failed setting boot class path.", nullptr);
+        fprintf(stderr, "stderr Failed 2 ab setting boot class path.\n");
+        vm_exit_during_initialization("Failed 2 ab setting boot class path.", nullptr);
     }
   }
 

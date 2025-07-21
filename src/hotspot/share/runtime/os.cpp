@@ -1529,6 +1529,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 
   // check if developer build with exploded modules
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
+fprintf(stderr, "[set_boot_path] base_classes = %s\n", base_classes);
   if (base_classes == nullptr) return false;
   if (os::stat(base_classes, &st) == 0) {
     Arguments::set_boot_class_path(base_classes, false);

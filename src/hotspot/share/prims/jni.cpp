@@ -3586,7 +3586,9 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
    */
   bool can_try_again = true;
 
+fprintf(stderr, "[JNI_CreateJavaVMInner] invoke create_vm0\n");
   result = Threads::create_vm((JavaVMInitArgs*) args, &can_try_again);
+fprintf(stderr, "[JNI_CreateJavaVMInner] invoked create_vm0\n");
   if (result == JNI_OK) {
     JavaThread *thread = JavaThread::current();
     assert(!thread->has_pending_exception(), "should have returned not OK");
@@ -3672,6 +3674,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 }
 
 _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, void *args) {
+fprintf(stderr, "[prims], JNI_CreateJavaVM called\n");
   jint result = JNI_ERR;
   // On Windows, let CreateJavaVM run with SEH protection
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)

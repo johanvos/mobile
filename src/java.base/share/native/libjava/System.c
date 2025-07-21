@@ -48,8 +48,10 @@ static JNINativeMethod methods[] = {
 JNIEXPORT void JNICALL
 Java_java_lang_System_registerNatives(JNIEnv *env, jclass cls)
 {
+    fprintf(stderr, "[JAVA.BASE] native, System.registerNatives\n");
     (*env)->RegisterNatives(env, cls,
                             methods, sizeof(methods)/sizeof(methods[0]));
+    fprintf(stderr, "[JAVA.BASE] native, System.registerNatives done\n");
 }
 
 JNIEXPORT jint JNICALL

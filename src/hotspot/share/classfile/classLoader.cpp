@@ -496,7 +496,8 @@ void ModuleClassPathList::add_to_list(ClassPathEntry* new_entry) {
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
   LogTarget(Info, class, path) lt;
-  if (lt.is_enabled()) {
+  // if (lt.is_enabled()) {
+  if (true) {
     LogStream ls(lt);
     if (msg) {
       ls.print("%s", msg);
@@ -519,6 +520,7 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 
 void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
   const char* bootcp = Arguments::get_boot_class_path();
+fprintf(stderr, "[classLoader] setup_bootstrap_search_path, bootcp = %s\n", bootcp);
   assert(bootcp != nullptr, "Boot class path must not be nullptr");
   if (PrintSharedArchiveAndExit) {
     // Don't print bootcp - this is the bootcp of this current VM process, not necessarily
@@ -854,13 +856,23 @@ void ClassLoader::load_java_library() {
 }
 
 void ClassLoader::load_jimage_library() {
+fprintf(stderr, "[JIMAGE_OPEN] 0 = %p \n", JImageOpen);
   assert(JImageOpen == nullptr, "should not load jimage library twice");
 
+fprintf(stderr, "[JIMAGE_OPEN] = %p \n", JImageOpen);
   if (is_vm_statically_linked()) {
+#ifdef __IOS__
+      JImageOpen = JIMAGE_Open;
+      JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
+      JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
+      JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+#else
       JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::lookup_function("JIMAGE_Open"));
       JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
       JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
       JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+fprintf(stderr, "[JIMAGE_OPEN] 2 = %p \n", JImageOpen);
+#endif
       assert(JImageOpen != nullptr && JImageClose != nullptr &&
             JImageFindResource != nullptr && JImageGetResource != nullptr,
             "could not lookup all jimage library functions");
@@ -1379,21 +1391,30 @@ static char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, 
 
 // Lookup VM options embedded in the modules jimage file
 char* ClassLoader::lookup_vm_options() {
+fprintf(stderr, "[LVMO1]\n");
   jint error;
   char modules_path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
+fprintf(stderr, "[LVMO1]1, now load jimage\n");
 
   // Initialize jimage library entry points
   load_jimage_library();
+fprintf(stderr, "[LVMO1]2\n");
 
-  jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
+  jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%smodules", Arguments::get_java_home(), fileSep, fileSep);
+  // jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
+fprintf(stderr, "[LVMO1]3, path = %s\n", modules_path);
   JImage_file =(*JImageOpen)(modules_path, &error);
+fprintf(stderr, "[LVMO1]4\n");
   if (JImage_file == nullptr) {
     return nullptr;
   }
 
+fprintf(stderr, "[LVMO1]\n");
   const char *jimage_version = get_jimage_version_string();
+fprintf(stderr, "[LVMO1]\n");
   char *options = lookup_vm_resource(JImage_file, jimage_version, "jdk/internal/vm/options");
+fprintf(stderr, "[LVMO1]\n");
   return options;
 }
 

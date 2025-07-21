@@ -102,7 +102,7 @@ InterpreterCodelet* ZeroInterpreter::codelet_containing(address pc) {
 
 int ZeroInterpreter::normal_entry(Method* method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = THREAD;
-
+// fprintf(stderr, "[INTER] normal_entry for method %s\n", method->name_and_sig_as_C_string());
   // Allocate and initialize our frame.
   InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
   thread->push_zero_frame(frame);
@@ -165,7 +165,7 @@ intptr_t narrow(BasicType type, intptr_t result) {
 void ZeroInterpreter::main_loop(int recurse, TRAPS) {
   JavaThread *thread = THREAD;
   ZeroStack *stack = thread->zero_stack();
-
+// fprintf(stderr, "[ZERO] main_loop, recurse = %d\n", recurse);
   // If we are entering from a deopt we may need to call
   // ourself a few times in order to get to our frame.
   if (recurse)
@@ -216,6 +216,7 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
     // Clear the frame anchor
     thread->reset_last_Java_frame();
 
+// fprintf(stderr, "[INT] statemsg = %d\n", istate->msg());
     // Examine the message from the interpreter to decide what to do
     if (istate->msg() == BytecodeInterpreter::call_method) {
       Method* callee = istate->callee();
@@ -357,9 +358,13 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   InterpreterRuntime::SignatureHandler *handler; {
     address handlerAddr = method->signature_handler();
     if (handlerAddr == nullptr) {
+// fprintf(stderr, "[ZEROINT] handler = 0, search for native call\n");
       CALL_VM_NOCHECK(InterpreterRuntime::prepare_native_call(thread, method));
-      if (HAS_PENDING_EXCEPTION)
+fprintf(stderr, "[ZEROINT] handler = 0, searched for native call\n");
+      if (HAS_PENDING_EXCEPTION) {
+fprintf(stderr, "[ZEROINT] handler = 0, searched for native call but pending exception\n");
         goto unlock_unwind_and_return;
+      }
 
       handlerAddr = method->signature_handler();
       assert(handlerAddr != nullptr, "eh?");

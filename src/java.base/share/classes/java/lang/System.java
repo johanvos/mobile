@@ -1927,17 +1927,25 @@ public final class System {
      * @return JNI_OK for success, JNI_ERR for failure
      */
     private static int initPhase2(boolean printToStderr, boolean printStackTrace) {
-
+System.err.println("[JAVA] initPhase2 0");
+String cp = System.getProperty("java.class.path");
+System.err.println("[JAVA] classpath = " + cp);
         try {
+System.err.println("[JAVA] initPhase2 1");
             bootLayer = ModuleBootstrap.boot();
+System.err.println("[JAVA] initPhase2 2");
         } catch (Exception | Error e) {
+System.err.println("[JAVA] initPhase2 3");
             logInitException(printToStderr, printStackTrace,
                              "Error occurred during initialization of boot layer", e);
             return -1; // JNI_ERR
         }
+System.err.println("[JAVA] initPhase2 4");
 
         // module system initialized
         VM.initLevel(2);
+System.err.println("[JAVA] initPhase2 5");
+
 
         return 0; // JNI_OK
     }

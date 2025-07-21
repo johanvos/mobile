@@ -167,6 +167,7 @@ static bool map_escaped_name_on(stringStream* st, Symbol* name) {
 
 
 char* NativeLookup::pure_jni_name(const methodHandle& method) {
+fprintf(stderr, "[PRIMS] nativeLookup0\n");
   stringStream st;
   // Prefix
   st.print("Java_");
@@ -183,6 +184,7 @@ char* NativeLookup::pure_jni_name(const methodHandle& method) {
 }
 
 char* NativeLookup::long_jni_name(const methodHandle& method) {
+fprintf(stderr, "[PRIMS] nativeLookup1\n");
   // Signatures ignore the wrapping parentheses and the trailing return type
   stringStream st;
   Symbol* signature = method->signature();
@@ -251,7 +253,9 @@ static address lookup_special_native(const char* jni_name) {
 
 address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, TRAPS) {
   address entry;
+fprintf(stderr, "[PRIMS] nativeLookup2\n");
   const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size);
+fprintf(stderr, "[PRIMS] nativeLookup2, jniname = %s\n", jni_name);
 
 
   // If the loader is null we have a system class, so we attempt a lookup in
@@ -260,10 +264,13 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   // gets found the first time around - otherwise an infinite loop can occur. This is
   // another VM/library dependency
   Handle loader(THREAD, method->method_holder()->class_loader());
+fprintf(stderr, "[PRIMS] nativeLookup2, loader = %p\n", loader);
   if (loader.is_null()) {
     entry = lookup_special_native(jni_name);
+fprintf(stderr, "[PRIMS] nativeLookup2, entry = %p\n", entry);
     if (entry == nullptr) {
        entry = (address) os::dll_lookup(os::native_java_library(), jni_name);
+fprintf(stderr, "[PRIMS] nativeLookup2, entry2 = %p\n", entry);
     }
     if (entry != nullptr) {
       return entry;
@@ -307,6 +314,8 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
 
 const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size) {
   stringStream st;
+fprintf(stderr, "[PRIMS] nativeLookup3\n");
+fprintf(stderr, "[PRIMS] nativeLookup3, pn = %s, ln = %s\n", pure_name, long_name);
   st.print_raw(pure_name);
   st.print_raw(long_name);
 
@@ -316,10 +325,12 @@ const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
 address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
+fprintf(stderr, "[PRIMS] nativeLookup4\n");
   address entry = nullptr;
   // Compute pure name
   char* pure_name = pure_jni_name(method);
   if (pure_name == nullptr) {
+fprintf(stderr, "[PRIMS] nativeLookup4, name = %s\n", pure_name);
     // JNI name mapping rejected this method so return
     // null to indicate UnsatisfiedLinkError should be thrown.
     return nullptr;
@@ -353,6 +364,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
 // native implementation again.
 // See SetNativeMethodPrefix in the JVM TI Spec for more details.
 address NativeLookup::lookup_entry_prefixed(const methodHandle& method, TRAPS) {
+fprintf(stderr, "[PRIMS] nativeLookup5\n");
 #if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
 
@@ -388,6 +400,7 @@ address NativeLookup::lookup_entry_prefixed(const methodHandle& method, TRAPS) {
 }
 
 address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
+fprintf(stderr, "[PRIMS] nativeLookup6\n");
   address entry = nullptr;
   ResourceMark rm(THREAD);
 
@@ -417,6 +430,7 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
 
 
 address NativeLookup::lookup(const methodHandle& method, TRAPS) {
+fprintf(stderr, "[PRIMS] nativeLookup7\n");
   if (!method->has_native_function()) {
     address entry = lookup_base(method, CHECK_NULL);
     method->set_native_function(entry,

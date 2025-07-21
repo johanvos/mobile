@@ -358,9 +358,13 @@ public final class Configuration {
                                         Collection<String> roots,
                                         PrintStream traceOutput)
     {
+System.err.println("[RAB] 0");
         List<Configuration> parents = List.of(empty());
+System.err.println("[RAB] 1");
         Resolver resolver = new Resolver(finder, parents, ModuleFinder.of(), traceOutput);
+System.err.println("[RAB] 2");
         resolver.resolve(roots).bind(/*bindIncubatorModules*/false);
+System.err.println("[RAB] 3");
         return new Configuration(parents, resolver);
     }
 

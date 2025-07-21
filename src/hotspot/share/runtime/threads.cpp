@@ -343,18 +343,23 @@ static void call_initPhase3(TRAPS) {
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
-
+fprintf(stderr, "[initjlc]0\n");
   initialize_class(vmSymbols::java_lang_String(), CHECK);
+fprintf(stderr, "[initjlc]1\n");
 
   // Inject CompactStrings value after the static initializers for String ran.
   java_lang_String::set_compact_strings(CompactStrings);
+fprintf(stderr, "[initjlc]2\n");
 
   // Initialize java_lang.System (needed before creating the thread)
   initialize_class(vmSymbols::java_lang_System(), CHECK);
+fprintf(stderr, "[initjlc]3\n");
   // The VM creates & returns objects of this class. Make sure it's initialized.
   initialize_class(vmSymbols::java_lang_Class(), CHECK);
+fprintf(stderr, "[initjlc]4\n");
 
   initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK);
+fprintf(stderr, "[initjlc]5\n");
   Handle thread_group = create_initial_thread_group(CHECK);
   Universe::set_main_thread_group(thread_group());
   initialize_class(vmSymbols::java_lang_Thread(), CHECK);
@@ -441,24 +446,30 @@ class ReadReleaseFileTask : public PeriodicTask {
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
+fprintf(stderr, "[create_vm] 0\n");
   // Preinitialize version info.
   VM_Version::early_initialize();
+fprintf(stderr, "[create_vm] 1\n");
 
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
   // Initialize library-based TLS
   ThreadLocalStorage::init();
+fprintf(stderr, "[create_vm] 1\n");
 
   // Initialize the output stream module
   ostream_init();
+fprintf(stderr, "[create_vm] 2\n");
 
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
+fprintf(stderr, "[create_vm] 3\n");
 
   // Initialize the os module
   os::init();
 
+fprintf(stderr, "[create_vm] 4\n");
   // Initialize memory pools
   Arena::initialize_chunk_pool();
 
@@ -467,29 +478,38 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
   create_vm_timer.start();
+fprintf(stderr, "[create_vm] 5\n");
 
   // Initialize system properties.
   Arguments::init_system_properties();
+fprintf(stderr, "[create_vm] 6\n");
 
   // So that JDK version can be used as a discriminator when parsing arguments
   JDK_Version_init();
+fprintf(stderr, "[create_vm] 6\n");
 
   // Update/Initialize System properties after JDK version number is known
   Arguments::init_version_specific_system_properties();
+fprintf(stderr, "[create_vm] 7\n");
 
   // Make sure to initialize log configuration *before* parsing arguments
   LogConfiguration::initialize(create_vm_timer.begin_time());
+fprintf(stderr, "[create_vm] 80\n");
 
   // Parse arguments
   // Note: this internally calls os::init_container_support()
   jint parse_result = Arguments::parse(args);
+fprintf(stderr, "[create_vm] 8a\n");
   if (parse_result != JNI_OK) return parse_result;
+fprintf(stderr, "[create_vm] 9\n");
 
   // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
   MemTracker::initialize();
+fprintf(stderr, "[create_vm] 10\n");
 
   os::init_before_ergo();
 
+fprintf(stderr, "[create_vm] 11\n");
   jint ergo_result = Arguments::apply_ergo();
   if (ergo_result != JNI_OK) return ergo_result;
 
@@ -503,6 +523,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (!constraint_result) {
     return JNI_EINVAL;
   }
+fprintf(stderr, "[create_vm] 12\n");
 
   if (PauseAtStartup) {
     os::pause();
@@ -525,6 +546,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   SafepointMechanism::initialize();
+fprintf(stderr, "[create_vm] 12\n");
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
@@ -540,6 +562,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   _number_of_non_daemon_threads = 0;
 
   // Initialize global data structures and create system classes in heap
+fprintf(stderr, "[create_vm] 13\n");
   vm_init_globals();
 
 #if INCLUDE_JVMCI
@@ -583,6 +606,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
+fprintf(stderr, "[create_vm] 14\n");
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
@@ -611,8 +635,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     MutexLocker mu(Threads_lock);
     Threads::add(main_thread);
   }
+fprintf(stderr, "[create_vm] 15\n");
+fprintf(stderr, "[create_vm] 15a\n");
 
   status = init_globals2();
+fprintf(stderr, "[create_vm] 16\n");
   if (status != JNI_OK) {
     Threads::remove(main_thread, false);
     // It is possible that we managed to fully initialize Universe but have then
@@ -626,11 +653,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   ObjectMonitor::Initialize2();
+fprintf(stderr, "[create_vm] 17\n");
 
   JFR_ONLY(Jfr::on_create_vm_1();)
 
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
+fprintf(stderr, "[create_vm] 18\n");
 
   // Any JVMTI raw monitors entered in onload will transition into
   // real raw monitor. VM is setup enough here for raw monitor enter.
@@ -646,6 +675,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       vm_exit_during_initialization("Cannot create VM thread. "
                                     "Out of system resources.");
     }
+fprintf(stderr, "[create_vm] 19\n");
 
     // Wait for the VM thread to become ready, and VMThread::run to initialize
     // Monitors can have spurious returns, must always check another state flag
@@ -675,29 +705,37 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
+fprintf(stderr, "[create_vm] 20a\n");
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_early_start_phase();
+fprintf(stderr, "[create_vm] 20b\n");
 
   // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
   JvmtiExport::post_early_vm_start();
+fprintf(stderr, "[create_vm] 20c\n");
 
   // Launch -Xrun agents early if EagerXrunInit is set
   if (EagerXrunInit) {
     JvmtiAgentList::load_xrun_agents();
   }
+fprintf(stderr, "[create_vm] 20d\n");
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
+fprintf(stderr, "[create_vm] 20e\n");
 
   quicken_jni_functions();
+fprintf(stderr, "[create_vm] 20f\n");
 
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
+fprintf(stderr, "[create_vm] 20g\n");
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
+fprintf(stderr, "[create_vm] 20h\n");
 
   LogConfiguration::post_initialize();
   Metaspace::post_initialize();
@@ -709,6 +747,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if INCLUDE_MANAGEMENT
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
+fprintf(stderr, "[create_vm] 21\n");
 
   log_info(os)("Initialized VM with process ID %d", os::current_process_id());
 
@@ -719,6 +758,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
+fprintf(stderr, "[create_vm] 22\n");
 
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
   if (!DisableAttachMechanism) {
@@ -769,26 +809,31 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CompileBroker::compilation_init(CHECK_JNI_ERR);
   }
 #endif
+fprintf(stderr, "[create_vm] 23\n");
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
     AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
   }
+fprintf(stderr, "[create_vm] 24\n");
 
   // Start string deduplication thread if requested.
   if (StringDedup::is_enabled()) {
     StringDedup::start();
   }
+fprintf(stderr, "[create_vm] 25\n");
 
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
   initialize_jsr292_core_classes(CHECK_JNI_ERR);
+fprintf(stderr, "[create_vm] 26\n");
 
   // This will initialize the module system.  Only java.base classes can be
   // loaded until phase 2 completes
   call_initPhase2(CHECK_JNI_ERR);
+fprintf(stderr, "[create_vm] 27\n");
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::load_non_javabase_classes(THREAD);
@@ -901,6 +946,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     ClassLoader::print_counters(&log);
   }
 
+fprintf(stderr, "[create_vm] 99\n");
   return JNI_OK;
 }
 

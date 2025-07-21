@@ -152,11 +152,15 @@ public final class ModuleBootstrap {
      * @see java.lang.System#initPhase2(boolean, boolean)
      */
     public static ModuleLayer boot() {
+System.err.println("[JAVA] ModuleLayer.boot 0");
         Counters.start();
+System.err.println("[JAVA] ModuleLayer.boot 1");
 
         ModuleLayer bootLayer;
         ArchivedBootLayer archivedBootLayer = ArchivedBootLayer.get();
+System.err.println("[JAVA] ModuleLayer.boot 2");
         if (archivedBootLayer != null) {
+System.err.println("[JAVA] ModuleLayer.boot 3a");
             assert canUseArchivedBootLayer();
             bootLayer = archivedBootLayer.bootLayer();
             BootLoader.getUnnamedModule(); // trigger <clinit> of BootLoader.
@@ -166,18 +170,24 @@ public final class ModuleBootstrap {
             // that is mapped to the application class loader.
             JLA.bindToLoader(bootLayer, ClassLoaders.appClassLoader());
         } else {
+System.err.println("[JAVA] ModuleLayer.boot 3b");
             bootLayer = boot2();
         }
+System.err.println("[JAVA] ModuleLayer.boot 4");
 
         Counters.publish("jdk.module.boot.totalTime");
+System.err.println("[JAVA] ModuleLayer.boot 5");
         return bootLayer;
     }
 
     private static ModuleLayer boot2() {
         // Step 0: Command line options
 
+System.err.println("[JAVA] ModuleLayer.boot2 0");
         ModuleFinder upgradeModulePath = finderFor("jdk.module.upgrade.path");
+System.err.println("[JAVA] ModuleLayer.boot2 1");
         ModuleFinder appModulePath = finderFor("jdk.module.path");
+System.err.println("[JAVA] ModuleLayer.boot2 2");
         boolean isPatched = patcher.hasPatches();
         String mainModule = System.getProperty("jdk.module.main");
         Set<String> addModules = addModules();
@@ -213,11 +223,13 @@ public final class ModuleBootstrap {
                 && !haveModulePath
                 && limitModules.isEmpty()
                 && !isPatched) {
+System.err.println("[JAVA] ModuleLayer.boot2 10a");
             systemModuleFinder = archivedModuleGraph.finder();
             mayContainSplitPackages = archivedModuleGraph.hasSplitPackages();
             mayContainIncubatorModules = archivedModuleGraph.hasIncubatorModules();
             needResolution = (traceOutput != null);
         } else {
+System.err.println("[JAVA] ModuleLayer.boot2 10b");
             if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
                 if (systemModules != null && !isPatched && traceOutput == null) {
@@ -230,22 +242,27 @@ public final class ModuleBootstrap {
 
             if (systemModules == null) {
                 // all system modules are observable
+System.err.println("[JAVA] ModuleLayer.boot2 11");
                 systemModules = SystemModuleFinders.allSystemModules();
             }
             if (systemModules != null) {
                 // images build
+System.err.println("[JAVA] ModuleLayer.boot2 12");
                 systemModuleFinder = SystemModuleFinders.of(systemModules);
             } else {
+System.err.println("[JAVA] ModuleLayer.boot2 13");
                 // exploded build or testing
                 systemModules = new ExplodedSystemModules();
                 systemModuleFinder = SystemModuleFinders.ofSystem();
             }
+System.err.println("[JAVA] ModuleLayer.boot2 14");
 
             // not using the archived module graph - avoid accidental use
             archivedModuleGraph = null;
         }
 
         Counters.add("jdk.module.boot.1.systemModulesTime");
+System.err.println("[JAVA] ModuleLayer.boot2 15");
 
         // Step 2: Define and load java.base. This patches all classes loaded
         // to date so that they are members of java.base. Once java.base is
@@ -259,6 +276,7 @@ public final class ModuleBootstrap {
         if (baseUri == null)
             throw new InternalError(JAVA_BASE + " does not have a location");
         BootLoader.loadModule(base);
+System.err.println("[JAVA] ModuleLayer.boot2 16");
 
         Module baseModule = Modules.defineModule(null, base.descriptor(), baseUri);
         JLA.addEnableNativeAccess(baseModule);
@@ -273,6 +291,7 @@ public final class ModuleBootstrap {
         }
 
         Counters.add("jdk.module.boot.2.defineBaseTime");
+System.err.println("[JAVA] ModuleLayer.boot2 20");
 
         // Step 3: If resolution is needed then create the module finder and
         // the set of root modules to resolve.
@@ -305,7 +324,9 @@ public final class ModuleBootstrap {
             boolean addAllDefaultModules = false;
             boolean addAllSystemModules = false;
             boolean addAllApplicationModules = false;
+System.err.println("[JAVA] ModuleLayer.boot2 22");
             for (String mod : addModules) {
+System.err.println("[JAVA] ModuleLayer.boot2 23, mod " + mod);
                 switch (mod) {
                     case ALL_DEFAULT:
                         addAllDefaultModules = true;
@@ -320,12 +341,14 @@ public final class ModuleBootstrap {
                         roots.add(mod);
                 }
             }
+System.err.println("[JAVA] ModuleLayer.boot2 24");
 
             // --limit-modules
             savedModuleFinder = finder;
             if (!limitModules.isEmpty()) {
                 finder = limitFinder(finder, limitModules, roots);
             }
+System.err.println("[JAVA] ModuleLayer.boot2 25");
 
             // If there is no initial module specified then assume that the initial
             // module is the unnamed module of the application class loader. This
@@ -336,6 +359,7 @@ public final class ModuleBootstrap {
             if (mainModule == null || addAllDefaultModules) {
                 roots.addAll(DefaultRoots.compute(systemModuleFinder, finder));
             }
+System.err.println("[JAVA] ModuleLayer.boot2 26");
 
             // If `--add-modules ALL-SYSTEM` is specified then all observable system
             // modules will be resolved.
@@ -348,6 +372,7 @@ public final class ModuleBootstrap {
                     .filter(mn -> f.find(mn).isPresent())  // observable
                     .forEach(mn -> roots.add(mn));
             }
+System.err.println("[JAVA] ModuleLayer.boot2 27");
 
             // If `--add-modules ALL-MODULE-PATH` is specified then all observable
             // modules on the application module path will be resolved.
@@ -365,6 +390,7 @@ public final class ModuleBootstrap {
             finder = systemModuleFinder;
             roots = null;
         }
+System.err.println("[JAVA] ModuleLayer.boot2 30");
 
         Counters.add("jdk.module.boot.3.optionsAndRootsTime");
 
@@ -372,28 +398,49 @@ public final class ModuleBootstrap {
         // the configuration for the boot layer. If resolution is not needed
         // then create the configuration for the boot layer from the
         // readability graph created at link time.
+System.err.println("[JAVA] ModuleLayer.boot2 31");
 
         Configuration cf;
         if (needResolution) {
+System.err.println("[JAVA] ModuleLayer.boot2 32");
+Runtime runtime = Runtime.getRuntime();
+long maxMemory = runtime.maxMemory();     // Max heap size
+        long totalMemory = runtime.totalMemory(); // Currently allocated heap
+        long freeMemory = runtime.freeMemory();   // Free space within allocated heap
+
+        long usedMemory = totalMemory - freeMemory;
+
+        System.err.println("Max Heap (bytes): " + maxMemory);
+        System.err.println("Total Heap (bytes): " + totalMemory);
+        System.err.println("Used Heap (bytes): " + usedMemory);
+        System.err.println("Free Heap (bytes): " + freeMemory);
+System.err.println("[JAVA] ModuleLayer.boot2 32a, roots = " + roots);
             cf = Modules.newBootLayerConfiguration(finder, roots, traceOutput);
         } else {
+System.err.println("[JAVA] ModuleLayer.boot2 33");
             if (archivedModuleGraph != null) {
+System.err.println("[JAVA] ModuleLayer.boot2 34");
                 cf = archivedModuleGraph.configuration();
             } else {
+System.err.println("[JAVA] ModuleLayer.boot2 35");
                 Map<String, Set<String>> map = systemModules.moduleReads();
                 cf = JLMA.newConfiguration(systemModuleFinder, map);
             }
         }
 
+System.err.println("[JAVA] ModuleLayer.boot2 36");
         // check that modules specified to --patch-module are resolved
         if (isPatched) {
+System.err.println("[JAVA] ModuleLayer.boot2 37");
             patcher.patchedModules()
                     .stream()
                     .filter(mn -> cf.findModule(mn).isEmpty())
                     .forEach(mn -> warnUnknownModule(PATCH_MODULE, mn));
         }
+System.err.println("[JAVA] ModuleLayer.boot2 38");
 
         Counters.add("jdk.module.boot.4.resolveTime");
+System.err.println("[JAVA] ModuleLayer.boot2 40");
 
         // Step 5: Map the modules in the configuration to class loaders.
         // The static configuration provides the mapping of standard and JDK
@@ -456,6 +503,7 @@ public final class ModuleBootstrap {
         addEnableNativeAccess(bootLayer);
 
         Counters.add("jdk.module.boot.7.adjustModulesTime");
+System.err.println("[JAVA] ModuleLayer.boot2 70");
 
         // Step 8: CDS dump phase
 
@@ -485,6 +533,7 @@ public final class ModuleBootstrap {
             if (savedModuleFinder != finder)
                 limitedFinder = new SafeModuleFinder(finder);
         }
+System.err.println("[JAVA] ModuleLayer.boot2 99");
 
         return bootLayer;
     }

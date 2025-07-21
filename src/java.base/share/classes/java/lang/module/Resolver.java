@@ -110,10 +110,12 @@ final class Resolver {
      * @throws ResolutionException
      */
     Resolver resolve(Collection<String> roots) {
+System.err.println("[RESOLVER] 0");
 
         // create the visit stack to get us started
         Deque<ModuleDescriptor> q = new ArrayDeque<>();
         for (String root : roots) {
+System.err.println("[RESOLVER] resolve " + root);
 
             // find root module
             ModuleReference mref = findWithBeforeFinder(root);
@@ -138,7 +140,9 @@ final class Resolver {
             q.push(mref.descriptor());
         }
 
+System.err.println("[RESOLVER] 2");
         resolve(q);
+System.err.println("[RESOLVER] 3");
 
         return this;
     }
@@ -151,9 +155,10 @@ final class Resolver {
      */
     private Set<ModuleDescriptor> resolve(Deque<ModuleDescriptor> q) {
         Set<ModuleDescriptor> resolved = new HashSet<>();
-
+System.err.println("[RESOLVEQ] q = " + q);
         while (!q.isEmpty()) {
             ModuleDescriptor descriptor = q.poll();
+System.err.println("[RESOLVEQ] desc = " + descriptor);
             assert nameToReference.containsKey(descriptor.name());
 
             // if the module is an automatic module then all automatic
@@ -168,6 +173,7 @@ final class Resolver {
                 });
                 haveAllAutomaticModules = true;
             }
+System.err.println("[RESOLVEQ] desc2 = " + descriptor);
 
             // process dependences
             for (ModuleDescriptor.Requires requires : descriptor.requires()) {
@@ -204,6 +210,7 @@ final class Resolver {
                 }
 
             }
+System.err.println("[RESOLVEQ] desc3 = " + descriptor);
 
             resolved.add(descriptor);
         }
@@ -231,7 +238,9 @@ final class Resolver {
         // java.base uses services then the module finders will be scanned
         // anyway.
         Map<String, Set<ModuleReference>> availableProviders = new HashMap<>();
+System.err.println("[RESOLVER] bind with inc = " + bindIncubatorModules);
         for (ModuleReference mref : findAll()) {
+System.err.println("[RESOLVER] bind ref " + mref);
             ModuleDescriptor descriptor = mref.descriptor();
 
             boolean candidate;
@@ -279,7 +288,9 @@ final class Resolver {
         // that provide an implementation of that service
         Set<ModuleDescriptor> candidateConsumers = initialConsumers;
         do {
+System.err.println("BIND in do");
             for (ModuleDescriptor descriptor : candidateConsumers) {
+System.err.println("BIND desc == " +descriptor);
                 if (!descriptor.uses().isEmpty()) {
 
                     // the modules that provide at least one service

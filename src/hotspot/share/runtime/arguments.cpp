@@ -143,6 +143,7 @@ struct VMInitArgsGroup {
 
 bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
   char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
+  fprintf(stderr, "[ARGS] setval %s\n", value);
   if (new_value == nullptr) {
     assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
     return false;
@@ -156,6 +157,7 @@ bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
 }
 
 void PathString::append_value(const char *value) {
+  fprintf(stderr, "[ARGS] appendval %s\n", value);
   char *sp;
   size_t len = 0;
   if (value != nullptr) {
@@ -364,6 +366,7 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
 
 // Process java launcher properties.
 void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
+  fprintf(stderr, "[ARGS] sunlaunchers\n");
   // See if sun.java.launcher is defined.
   // Must do this before setting up other system properties,
   // as some of them may depend on launcher type.
@@ -384,6 +387,7 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
+  fprintf(stderr, "[ARGS] initsysprops\n");
 
   // Set up _boot_class_path which is not a property but
   // relies heavily on argument processing and the jdk.boot.class.path.append
@@ -419,9 +423,11 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, _java_class_path);
   PropertyList_add(&_system_properties, _jdk_boot_class_path_append);
   PropertyList_add(&_system_properties, _vm_info);
+  fprintf(stderr, "[ARGS] initsysprops 1\n");
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+  fprintf(stderr, "[ARGS] initsysprops 2\n");
 }
 
 // Update/Initialize System properties after JDK version number is known
@@ -931,6 +937,7 @@ JVMFlag* Arguments::find_jvm_flag(const char* name, size_t name_length) {
 }
 
 bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
+  fprintf(stderr, "[arguments] parse_arg, arg = %s\n", arg);
   bool is_bool = false;
   bool bool_val = false;
   char c = *arg;
@@ -1883,6 +1890,7 @@ static const char* system_assertion_options[] = {
 bool Arguments::parse_uint(const char* value,
                            uint* uint_arg,
                            uint min_size) {
+fprintf(stderr, "ARGS:: parseuint\n");
   uint n;
   if (!parse_integer(value, &n)) {
     return false;
@@ -1951,6 +1959,7 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
+fprintf(stderr, "[ARGS] parseVm_init\n");
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
@@ -2125,6 +2134,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
 
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin) {
   // For match_option to return remaining or value part of option string
+fprintf(stderr, "[ARGS] parse_each_vm_init_arg\n");
   const char* tail;
 
   // iterate over arguments
@@ -2849,6 +2859,7 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) 
 // directory anyway. Adding -XX:+IgnoreEmptyClassPaths will make these applications' start-up
 // scripts compatible with CDS.
 void Arguments::fix_appclasspath() {
+fprintf(stderr, "[ARGS] fix_appclasspath\n");
   if (IgnoreEmptyClassPaths) {
     const char separator = *os::path_separator();
     const char* src = _java_class_path->value();
@@ -3481,6 +3492,7 @@ static void apply_debugger_ergo() {
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
+fprintf(stderr, "[ARGS][PARSE]\n");
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
   JVMFlag::check_all_flag_declarations();
 
@@ -3508,6 +3520,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   ScopedVMInitArgs mod_jdk_aot_vm_options_args("env_var='_JDK_AOT_VM_OPTIONS'");
 
   GrowableArrayCHeap<VMInitArgsGroup, mtArguments> all_args;
+fprintf(stderr, "[ARGS][PARSE] 1\n");
 
   jint code =
       parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
@@ -3531,6 +3544,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       return code;
     }
   }
+fprintf(stderr, "[ARGS][PARSE] 2\n");
 
   code = expand_vm_options_as_needed(initial_java_tool_options_args.get(),
                                      &mod_java_tool_options_args,
@@ -3559,6 +3573,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if (code != JNI_OK) {
     return code;
   }
+fprintf(stderr, "[ARGS][PARSE] 3\n");
 
   const char* flags_file = Arguments::get_jvm_flags_file();
   settings_file_specified = (flags_file != nullptr);
@@ -3738,6 +3753,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     LogStream st(Log(arguments)::info());
     Arguments::print_on(&st);
   }
+fprintf(stderr, "[ARGS][PARSE] DONE\n");
 
   return JNI_OK;
 }
