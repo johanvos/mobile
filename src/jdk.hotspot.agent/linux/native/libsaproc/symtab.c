@@ -30,6 +30,22 @@
 #include "symtab.h"
 #include "salibelf.h"
 
+#if FALSE
+#ifdef __BIONIC__
+int hcreate_r(size_t nel, struct hsearch_data *htab) {
+  return -1;
+}
+
+int hsearch_r(struct entry item, int action,
+                            struct ENTRY **retval, struct hsearch_data *htab) {
+  return -1;
+}
+
+void hdestroy_r(struct hsearch_data *htab) {
+}
+#endif
+#endif
+
 
 // ----------------------------------------------------
 // functions for symbol lookups

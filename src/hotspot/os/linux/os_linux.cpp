@@ -114,6 +114,11 @@
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <unistd.h>
+#ifdef __ANDROID__
+# include <sys/syscall.h>
+# include <linux/elf.h>
+# include <linux/elf-em.h>
+#endif
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -677,9 +682,11 @@ void os::init_system_properties_values() {
 
 void os::Linux::libpthread_init() {
   // Save glibc and pthread version strings.
+#ifndef __BIONIC__
 #if !defined(_CS_GNU_LIBC_VERSION) || \
     !defined(_CS_GNU_LIBPTHREAD_VERSION)
   #error "glibc too old (< 2.3.2)"
+#endif
 #endif
 
 #ifdef MUSL_LIBC
@@ -687,6 +694,9 @@ void os::Linux::libpthread_init() {
   // _CS_GNU_LIBC_VERSION and _CS_GNU_LIBPTHREAD_VERSION
   os::Linux::set_libc_version("musl - unknown");
   os::Linux::set_libpthread_version("musl - unknown");
+#elif defined(__BIONIC__)
+  os::Linux::set_libc_version("bionic - unknown");
+  os::Linux::set_libpthread_version("bionic - unknown");
 #else
   size_t n = confstr(_CS_GNU_LIBC_VERSION, nullptr, 0);
   assert(n > 0, "cannot retrieve glibc version");
@@ -2009,7 +2019,11 @@ const char* os::Linux::dll_path(void* lib) {
   const char* l_path = nullptr;
   assert(lib != nullptr, "dll_path parameter must not be null");
 
+#ifndef __BIONIC__
   int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+#else
+  int res_dli = -1;
+#endif
   if (res_dli == 0) {
     l_path = lmap->l_name;
   }
@@ -3122,7 +3136,11 @@ extern "C" JNIEXPORT void numa_error(char *where) { }
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+  #ifndef __BIONIC__
   void *f = dlvsym(handle, name, "libnuma_1.1");
+  #else
+  void *f = dlsym(handle, name);
+  #endif
   if (f == nullptr) {
     f = dlsym(handle, name);
   }
@@ -3132,7 +3150,11 @@ void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
 // Return null if the symbol is not defined in this particular version.
 void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
+  #ifndef __BIONIC__
   return dlvsym(handle, name, "libnuma_1.2");
+  #else
+  return dlsym(handle, name);
+  #endif
 }
 
 // Check numa dependent syscalls
@@ -4361,7 +4383,12 @@ void os::init(void) {
   check_pax();
 
   // Check the availability of MADV_POPULATE_WRITE.
+#ifdef __BIONIC__
+  char dummy2;
+  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(&dummy2, 1, MADV_POPULATE_WRITE) == 0));
+#else
   FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(nullptr, 0, MADV_POPULATE_WRITE) == 0));
+#endif
 
   os::Posix::init();
 }
@@ -5110,7 +5137,11 @@ bool os::is_thread_cpu_time_supported() {
 // Linux doesn't yet have a (official) notion of processor sets,
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
+  #ifndef __BIONIC__
   return ::getloadavg(loadavg, nelem);
+  #else
+  return -1;
+  #endif
 }
 
 // Get the default path to the core file
