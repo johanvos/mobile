@@ -41,7 +41,7 @@
 #ifdef _WINDOWS
 #include "forbiddenFunctions_windows.hpp"
 #else
-#if !defined(ANDROID)
+#if !defined(__BIONIC__)
 #include "forbiddenFunctions_posix.hpp"
 #endif
 #endif
@@ -51,7 +51,7 @@
 // or have security concerns, either with preferred alternatives, or to be
 // avoided entirely.
 
-#if !defined(ANDROID)
+#if !defined(__BIONIC__)
 FORBID_IMPORTED_NORETURN_C_FUNCTION(void exit(int), noexcept, "use os::exit")
 FORBID_IMPORTED_NORETURN_C_FUNCTION(void _Exit(int), noexcept, "use os::exit")
 

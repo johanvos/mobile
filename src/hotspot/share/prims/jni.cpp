@@ -3584,9 +3584,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
    */
   bool can_try_again = true;
 
-fprintf(stderr, "[JVM] jni: call create_vm\n");
   result = Threads::create_vm((JavaVMInitArgs*) args, &can_try_again);
-fprintf(stderr, "[JVM] jni: called create_vm\n");
   if (result == JNI_OK) {
     JavaThread *thread = JavaThread::current();
     assert(!thread->has_pending_exception(), "should have returned not OK");

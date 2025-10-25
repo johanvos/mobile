@@ -248,15 +248,6 @@ static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
 }
 #endif
 
-#ifdef __BIONIC__
-#if __ANDROID_API__ < 26
-#define getgrgid_r(gid, gr, buf, buflen, result) \
-    (*(result) = getgrgid(gid), (*(result) != NULL ? 0 : -1))
-#define getgrnam_r(name, gr, buf, buflen, result) \
-    (*(result) = getgrnam(name), (*(result) != NULL ? 0 : -1))
-#endif
-#endif
-
 /**
  * Call this to throw an internal UnixException when a system/library
  * call fails

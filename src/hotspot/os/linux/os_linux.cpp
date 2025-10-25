@@ -114,11 +114,6 @@
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <unistd.h>
-#ifdef __ANDROID__
-# include <sys/syscall.h>
-# include <linux/elf.h>
-# include <linux/elf-em.h>
-#endif
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -606,7 +601,6 @@ void os::init_system_properties_values() {
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
-fprintf(stderr, "[JVM] buf0 = %s\n", buf);
 
     // Found the full path to the binary. It is normally of this structure:
     //   <jdk_path>/lib/<hotspot_variant>/libjvm.so
@@ -626,7 +620,6 @@ fprintf(stderr, "[JVM] buf0 = %s\n", buf);
         *pslash = '\0';
       }
     }
-fprintf(stderr, "[JVM] buf1 = %s\n", buf);
     Arguments::set_dll_dir(buf);
 
     // Get rid of /lib, if binary is libjvm.so,
@@ -640,9 +633,8 @@ fprintf(stderr, "[JVM] buf1 = %s\n", buf);
     }
 #endif
     Arguments::set_java_home(buf);
-fprintf(stderr, "[JVM] buf = %s\n", buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting Boot class path.", nullptr);
+      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
 
@@ -2020,19 +2012,19 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
 }
 
 const char* os::Linux::dll_path(void* lib) {
+#ifdef __BIONIC__
+  return nullptr;
+#else
   struct link_map *lmap;
   const char* l_path = nullptr;
   assert(lib != nullptr, "dll_path parameter must not be null");
 
-#ifndef __BIONIC__
   int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
-#else
-  int res_dli = -1;
-#endif
   if (res_dli == 0) {
     l_path = lmap->l_name;
   }
   return l_path;
+#endif
 }
 
 static unsigned count_newlines(const char* s) {

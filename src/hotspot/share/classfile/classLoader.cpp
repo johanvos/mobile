@@ -856,18 +856,18 @@ void ClassLoader::load_java_library() {
 void ClassLoader::load_jimage_library() {
   assert(JImageOpen == nullptr, "should not load jimage library twice");
 
-fprintf(stderr, "[JVM] CL, load jimage lib\n");
   if (is_vm_statically_linked()) {
-fprintf(stderr, "[JVM] CL, load jimage lib statlinked\n");
 #ifndef __BIONIC__
       JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::lookup_function("JIMAGE_Open"));
-#else
-      JImageOpen = JIMAGE_Open;
-#endif
-fprintf(stderr, "[JVM] CL, jimageopen = %p\n", JImageOpen);
       JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
       JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
       JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+#else
+      JImageOpen = JIMAGE_Open;
+      JImageClose = JIMAGE_Close;
+      JImageFindResource = JIMAGE_FindResource;
+      JImageGetResource = JIMAGE_GetResource;
+#endif
       assert(JImageOpen != nullptr && JImageClose != nullptr &&
             JImageFindResource != nullptr && JImageGetResource != nullptr,
             "could not lookup all jimage library functions");
@@ -986,13 +986,10 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
                                                     PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                     const char* const file_name) {
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 0\n");
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 0 for %s\n", file_name);
   ClassFileStream* stream = nullptr;
 
   // Find the defining module in the boot loader's module entry table
   ModuleEntry* mod_entry = (pkg_entry != nullptr) ? pkg_entry->module() : nullptr;
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 5 for %s\n", file_name);
 
   // If the module system has not defined java.base yet, then
   // classes loaded are assumed to be defined to java.base.
@@ -1004,7 +1001,6 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
       mod_entry == nullptr) {
     mod_entry = ModuleEntryTable::javabase_moduleEntry();
   }
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 6 for %s\n", file_name);
 
   // The module must be a named module
   ClassPathEntry* e = nullptr;
@@ -1019,7 +1015,6 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
       e = find_first_module_cpe(mod_entry, module_list);
     }
   }
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 7 for %s\n", file_name);
 
   // Try to load the class from the module's ClassPathEntry list.
   while (e != nullptr) {
@@ -1027,7 +1022,6 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
     // No context.check is required since CDS is not supported
     // for an exploded modules build or if --patch-module is specified.
     if (nullptr != stream) {
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 8 success for %s\n", file_name);
       return stream;
     }
     e = e->next();
@@ -1035,7 +1029,6 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
   // If the module was located, break out even if the class was not
   // located successfully from that module's ClassPathEntry list.
   // There will not be another valid entry for that module.
-  fprintf(stderr, "[JVM] [CL] searchmoduleentries 9 failed for %s\n", file_name);
   return nullptr;
 }
 
@@ -1426,25 +1419,18 @@ char* ClassLoader::lookup_vm_options() {
   jint error;
   char modules_path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
-fprintf(stderr, "[JVM] CL vm_options0\n");
 
   // Initialize jimage library entry points
   load_jimage_library();
-fprintf(stderr, "[JVM] CL vm_options1\n");
 
   jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
-fprintf(stderr, "[JVM] CL vm_options2\n");
   JImage_file =(*JImageOpen)(modules_path, &error);
-fprintf(stderr, "[JVM] CL vm_options3\n");
   if (JImage_file == nullptr) {
     return nullptr;
   }
-fprintf(stderr, "[JVM] CL vm_options4\n");
 
   const char *jimage_version = get_jimage_version_string();
-fprintf(stderr, "[JVM] CL vm_options5\n");
   char *options = lookup_vm_resource(JImage_file, jimage_version, "jdk/internal/vm/options");
-fprintf(stderr, "[JVM] CL vm_options6\n");
   return options;
 }
 
