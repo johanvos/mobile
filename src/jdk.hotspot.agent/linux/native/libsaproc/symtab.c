@@ -30,7 +30,7 @@
 #include "symtab.h"
 #include "salibelf.h"
 
-#if FALSE
+#if 0
 #ifdef __BIONIC__
 int hcreate_r(size_t nel, struct hsearch_data *htab) {
   return -1;

@@ -606,6 +606,7 @@ void os::init_system_properties_values() {
   {
     char *pslash;
     os::jvm_path(buf, bufsize);
+fprintf(stderr, "[JVM] buf0 = %s\n", buf);
 
     // Found the full path to the binary. It is normally of this structure:
     //   <jdk_path>/lib/<hotspot_variant>/libjvm.so
@@ -625,19 +626,23 @@ void os::init_system_properties_values() {
         *pslash = '\0';
       }
     }
+fprintf(stderr, "[JVM] buf1 = %s\n", buf);
     Arguments::set_dll_dir(buf);
 
     // Get rid of /lib, if binary is libjvm.so,
     // or cut off /bin, if it is a statically linked binary.
+#ifndef __BIONIC__
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
         *pslash = '\0';
       }
     }
+#endif
     Arguments::set_java_home(buf);
+fprintf(stderr, "[JVM] buf = %s\n", buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
+      vm_exit_during_initialization("Failed setting Boot class path.", nullptr);
     }
   }
 

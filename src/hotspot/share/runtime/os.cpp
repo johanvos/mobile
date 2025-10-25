@@ -1510,6 +1510,7 @@ FILE* os::fopen(const char* path, const char* mode) {
 
 bool os::set_boot_path(char fileSep, char pathSep) {
   const char* home = Arguments::get_java_home();
+fprintf(stderr, "[JVM] home = %s\n", home);
   int home_len = (int)strlen(home);
 
   struct stat st;
@@ -1517,6 +1518,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   // modular image if "modules" jimage exists
 #ifndef __IOS__
   char* jimage = format_boot_path("%/lib/" MODULES_IMAGE_NAME, home, home_len, fileSep, pathSep);
+fprintf(stderr, "[JVM] search jimage at %s\n", jimage);
 #else
   char* jimage = format_boot_path("%/Documents/lib/" MODULES_IMAGE_NAME, home, home_len, fileSep, pathSep);
 #endif
@@ -1531,6 +1533,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 
   // check if developer build with exploded modules
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
+fprintf(stderr, "[JVM] base_classes = %s\n", base_classes);
   if (base_classes == nullptr) return false;
   if (os::stat(base_classes, &st) == 0) {
     Arguments::set_boot_class_path(base_classes, false);

@@ -818,7 +818,9 @@ void* os::get_default_process_handle() {
 
 void* os::dll_lookup(void* handle, const char* name) {
   ::dlerror(); // Clear any previous error
+fprintf(stderr, "[JVM] dlllookup for %s\n", name);
   void* ret = ::dlsym(handle, name);
+fprintf(stderr, "[JVM] dlllookup for %s results in %p\n", name, ret);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
     // It is possible that we found a null symbol, hence no error.

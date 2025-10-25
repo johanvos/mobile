@@ -955,6 +955,7 @@ JVMFlag* Arguments::find_jvm_flag(const char* name, size_t name_length) {
 }
 
 bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
+fprintf(stderr, "[JVM] arg pa\n");
   bool is_bool = false;
   bool bool_val = false;
   char c = *arg;
@@ -3520,6 +3521,7 @@ static void apply_debugger_ergo() {
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
+fprintf(stderr, "[JVM] ARGparse 0\n");
   assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
   JVMFlag::check_all_flag_declarations();
 
@@ -3531,6 +3533,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
   ScopedVMInitArgs initial_jdk_aot_vm_options_args("env_var='JDK_AOT_VM_OPTIONS'");
+fprintf(stderr, "[JVM] ARGparse 1\n");
 
   // Pointers to current working set of containers
   JavaVMInitArgs* cur_cmd_args;
@@ -3548,28 +3551,36 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
   GrowableArrayCHeap<VMInitArgsGroup, mtArguments> all_args;
 
+fprintf(stderr, "[JVM] ARGparse 2\n");
   jint code =
       parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
+fprintf(stderr, "[JVM] ARGparse 3a\n");
   if (code != JNI_OK) {
     return code;
   }
+fprintf(stderr, "[JVM] ARGparse 3b\n");
 
   // Yet another environment variable: _JAVA_OPTIONS. This mimics the classic VM.
   // This is an undocumented feature.
   code = parse_java_options_environment_variable(&initial_java_options_args);
+fprintf(stderr, "[JVM] ARGparse 3c\n");
   if (code != JNI_OK) {
     return code;
   }
+fprintf(stderr, "[JVM] ARGparse 3d\n");
 
   // Parse the options in the /java.base/jdk/internal/vm/options resource, if present
   char *vmoptions = ClassLoader::lookup_vm_options();
+fprintf(stderr, "[JVM] ARGparse 3e\n");
   if (vmoptions != nullptr) {
+fprintf(stderr, "[JVM] ARGparse 3f\n");
     code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &initial_vm_options_args);
     FREE_C_HEAP_ARRAY(char, vmoptions);
     if (code != JNI_OK) {
       return code;
     }
   }
+fprintf(stderr, "[JVM] ARGparse 4\n");
 
   code = expand_vm_options_as_needed(initial_java_tool_options_args.get(),
                                      &mod_java_tool_options_args,
@@ -3778,6 +3789,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
+fprintf(stderr, "[JVM] ARGparse 99\n");
   return JNI_OK;
 }
 
